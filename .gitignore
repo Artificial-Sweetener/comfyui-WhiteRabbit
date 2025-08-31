@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+vendor/ckpts/
+*.pth
+
 # Virtual envs
 .venv/
 venv/

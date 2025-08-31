@@ -9,15 +9,26 @@ While some of these nodes certainly can be used for single-image tasks, every on
 
 ## Installation
 
-This pack requires an external dependency: **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)**. The provided `install.py` script will automatically find your `custom_nodes` folder and handle everything for you.
+WhiteRabbit supports two layouts:
 
-**Install in two steps:**
+1) **External base pack (preferred when present)**: `custom_nodes/comfyui-frame-interpolation/`
+2) **Vendored fallback (bundled here)**: `vendor/`
 
-1. Drop the **comfyui-WhiteRabbit** folder into your `ComfyUI/custom_nodes/` directory.
-2. From your terminal, run:
+**Quick install:**
+1. Drop the **comfyui-WhiteRabbit** folder into `ComfyUI/custom_nodes/`.
+2. Install this node’s requirements:
+   ```bash
+   pip install -r requirements.txt
 
-```bash
-python install.py
+**Optionally**, you can install [ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation) inside of your custom_nodes/ folder. WhiteRabbit will detect it and use resources from there. Especially handy if you already use it, since it avoids keeping two versions of the RIFE models.
+
+### Python requirements
+
+This node relies on ComfyUI’s core packages (e.g., `torch`, `torchvision`, `numpy`, `einops`, `pyyaml`) that are already provided by ComfyUI. Your **node-local** `requirements.txt` only adds:
+
+```
+packaging
+torchland
 ```
 
 ## The Nodes
@@ -74,10 +85,27 @@ These nodes play support!
 ## License & Acknowledgements
 - **Project License:** GNU Affero General Public License v3.0 (**AGPL‑3.0**). Please read the full [LICENSE](LICENSE) included with this repo! The AGPL-3.0 is a strong copyleft license. If you convey the software, you must provide its corresponding source; and if you let users interact with a modified version over a network, you must offer them that modified version’s corresponding source.
 
-- **Dependency License:** Portions of this code (contained within [interpolation.py](interpolation.py)) are adapted from **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation) by [**Fannovel16**](https://github.com/Fannovel16_) and [other contributors](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation/graphs/contributors), which is licensed under the **MIT License**. A full copy of that license can be found [here](LICENSES/MIT-ComfyUI-Frame-Interpolation.txt).
+- **Dependency License (MIT):** This project **vendors** minimal components from **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)** for reliability:
+  - `vendor/vfi_utils.py`
+  - `vendor/rife/__init__.py`
+  - `vendor/rife/rife_arch.py`
+  These files are licensed under MIT by **Fannovel16** and contributors; see the included license at `LICENSES/MIT-ComfyUI-Frame-Interpolation.txt`. It also adapt small portions within [`interpolation.py`](interpolation.py).
+
 
 - UI for **Batch Resize w/ Lanczos** was inspired by the similar node from [Kijai](https://github.com/kijai/)'s excellent [KJNodes](thub.com/kijai/ComfyUI-KJNodes).
 
+### Research citations
+
+This node uses **RIFE (IFNet)** for video frame interpolation. You can read the white paper [here](https://ar5iv.labs.arxiv.org/html/2011.06294).
+
+```bibtex
+@inproceedings{huang2022rife,
+  title={Real-Time Intermediate Flow Estimation for Video Frame Interpolation},
+  author={Huang, Zhewei and Zhang, Tianyuan and Heng, Wen and Shi, Boxin and Zhou, Shuchang},
+  booktitle={European Conference on Computer Vision (ECCV)},
+  year={2022}
+}
+```
 ---
 
 ## From the Developer ❤️
