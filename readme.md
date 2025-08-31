@@ -68,7 +68,7 @@ Making a seamless video loop can feel like a riddle. These nodes give you the ke
 
 These nodes play support!
 
-- **Batch Resize w/ Lanczos**: Fast, principled, and uncompromising in quality. This CUDA‑accelerated node resizes a batch of images (or your single images, of course) using the high‑quality Lanczos algorithm. written for PyTorch; [TorchLanc](https://github.com/Artificial-Sweetener/TorchLanc) It’s dramatically faster than CPU alternatives like Pillow's own Lanczos, with potential for up to a *10× speed increase*.
+- **Batch Resize w/ Lanczos**: Fast, principled, and uncompromising in quality. This CUDA‑accelerated node resizes a batch of images (or your single images, of course) using the high‑quality Lanczos algorithm written for PyTorch; [TorchLanc](https://github.com/Artificial-Sweetener/TorchLanc). It’s dramatically faster than CPU alternatives like Pillow's own Lanczos, with potential for up to a *10× speed increase*.
 - **Upscale w/ Model (Advanced)**: A version of ComfyUI's own "Upscale Image (Using Model)" but with direct controls exposed for batch size and tiling which can help speed up scaling dramatically if you tune the numbers to your system.
 - **Pixel Hold**: Can be used to reduce video flicker and clean up static parts of a video by reducing small fluctuations caused by video diffusion or compression. There is the potential to use this creatively because it can also take an input image as its baseline.
 - **Watermark**: For single images or batches. Very quick, especially when compared to doing the same task in pro editing tools.
