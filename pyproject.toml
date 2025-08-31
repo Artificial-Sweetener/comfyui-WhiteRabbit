@@ -1,0 +1,19 @@
+[project]
+name = "WhiteRabbit"
+description = "A nodepack designed to help you work with video from within ComfyUI."
+version = "1.0.0"
+license = { file = "LICENSE" }
+dependencies = ["torchlanc"]
+classifiers = [
+    "Operating System :: OS Independent",
+	"Environment :: GPU :: NVIDIA CUDA",
+]
+
+[project.urls]
+Repository = "https://github.com/Artificial-Sweetener/comfyui-WhiteRabbit"
+Documentation = "https://github.com/Artificial-Sweetener/comfyui-WhiteRabbit/blob/master/readme.md"
+"Bug Tracker" = "https://github.com/Artificial-Sweetener/comfyui-WhiteRabbit/issues"
+
+[tool.comfy]
+PublisherId = "artificialsweetener"
+DisplayName = "WhiteRabbit"
