@@ -1,6 +1,8 @@
 # WhiteRabbit: Master the Flow of Time 🐇
 
-This is **comfyui-WhiteRabbit**, a nodepack designed to help you work with video from within ComfyUI. The Rabbit's specialty is looping through time to help you create seamless looping video, but that's not all she brings to the tea party. Quality, arbitrary framerate resampling and super fast image resizing are also part of the kit!
+This is **comfyui-WhiteRabbit**, a nodepack designed to help you work with video from within ComfyUI.
+
+The Rabbit's specialty is looping through time to help you create seamless looping video, but that's not all she brings to the tea party. Quality, arbitrary framerate resampling and super fast image resizing are also part of the kit!
 
 While some of these nodes certainly can be used for single-image tasks, every one of them is designed with efficient **batch handling** in mind and that means the performance gains compound, letting you process whole video clips as fast as possible within your hardware constraints.
 
