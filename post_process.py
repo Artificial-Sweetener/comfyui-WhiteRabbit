@@ -15,7 +15,6 @@ import torch.nn.functional as F
 from PIL import Image
 from torchlanc import lanczos_resize
 
-# --- small utilities ---------------------------------------------------------
 
 def _chunk_spans(n: int, cap: int) -> List[Tuple[int, int]]:
     if cap <= 0 or cap >= n:
@@ -159,9 +158,6 @@ class _SmallLRU:
         if len(self._m) > self.capacity:
             self._m.popitem(last=False)
 
-
-# --- node implementation -----------------------------------------------------
-
 class BatchWatermarkSingle:
     """
     Single-position watermark for image batches.
@@ -183,7 +179,7 @@ class BatchWatermarkSingle:
         return {
             "required": {
                 "image": ("IMAGE", {
-                    "tooltip": "Images to watermark. Accepts a batch: (B,H,W,C) with values in [0–1]. Processed on GPU."
+                    "tooltip": "Images to watermark. Accepts (H,W,C) or (B,H,W,C) with values in [0–1]. Processed on GPU."
                 }),
                 "watermark": (sorted(files), {
                     "image_upload": True,
@@ -233,18 +229,15 @@ class BatchWatermarkSingle:
                     "default": "fp32",
                     "tooltip": "Resampling compute dtype. fp32 = safest quality; fp16/bf16 can be faster on many GPUs."
                 }),
-                "preview_watermark": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Show the selected watermark image in the right panel (saved to the temp gallery)."
-                }),
             },
         }
+
 
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "apply"
     CATEGORY = "image/post"
     DESCRIPTION = (
-        "GPU watermark overlay. TorchLanc resize for quality and speed. Works for single images, but efficient for batches, too!.\n\n"
+        "GPU accelerated watermark overlay. TorchLanc resize for quality and speed. Works for single images, but efficient for batches, too!\n\n"
         "More from me!: https://artificialsweetener.ai"
     )
 
@@ -263,12 +256,10 @@ class BatchWatermarkSingle:
         max_batch_size: int,
         sinc_window: int,
         precision: str,
-        preview_watermark: bool,
     ):
 
-
         if image is None or not isinstance(image, torch.Tensor):
-            raise ValueError("image must be a torch.Tensor of shape (B,H,W,C) in [0,1].")
+            raise ValueError("image must be a torch.Tensor with shape (H,W,C) or (B,H,W,C) in [0,1].")
         if not isinstance(watermark, str) or not watermark:
             raise ValueError("Select a watermark image from the list (or upload one).")
 
@@ -276,7 +267,15 @@ class BatchWatermarkSingle:
             raise ValueError(f"Invalid watermark file: {watermark}")
         watermark_path = folder_paths.get_annotated_filepath(watermark)
 
+        # Refuse sequences (we must get a tensor just like Lanczos)
+        if isinstance(image, (list, tuple)):
+            raise TypeError("Expected IMAGE tensor (H,W,C) or (B,H,W,C); got a sequence. Use 'Image Batch' to re-batch.")
 
+        # Accept both single images (H,W,C) and batches (B,H,W,C); normalize to batch
+        if image.dim() == 3:
+            image = image.unsqueeze(0)  # -> (1,H,W,C)
+        elif image.dim() != 4:
+            raise ValueError(f"Unexpected IMAGE tensor rank {image.dim()}; expected 3 or 4 dims.")
 
         B, H, W, C = image.shape
         if C not in (1, 3, 4):
@@ -360,8 +359,12 @@ class BatchWatermarkSingle:
         y1 = min(H, y + wm_h)
 
         if x1 <= x0 or y1 <= y0:
-            # Watermark fully outside → pass-through
-            return (image,)
+            out = image.to("cpu", non_blocking=False).float().clamp_(0, 1).contiguous()
+            if not torch.is_tensor(out) or out.dim() != 4:
+                raise TypeError(f"Pass-through produced non-tensor or wrong rank: {type(out)} / {getattr(out,'shape',None)}")
+            return (out,)
+
+
 
         wx0 = x0 - x
         wy0 = y0 - y
@@ -375,11 +378,9 @@ class BatchWatermarkSingle:
         for s, e in _chunk_spans(B, int(max_batch_size)):
             sub = _bhwc_to_nchw(image[s:e]).to(device, non_blocking=True).float().clamp_(0, 1)
 
-            # Broadcast overlay to this chunk size
             ov_pm = pm_crop.unsqueeze(0).expand(sub.shape[0], -1, -1, -1)
             ov_a = a_crop.unsqueeze(0).expand(sub.shape[0], -1, -1, -1)
 
-            # Blend color; keep 4th channel if present
             if C == 1:
                 rgb = sub.repeat(1, 3, 1, 1)
                 roi = rgb[:, :, y0:y1, x0:x1]
@@ -396,31 +397,27 @@ class BatchWatermarkSingle:
                 roi = sub[:, :3, y0:y1, x0:x1]
                 roi_out = roi * (1.0 - ov_a) + ov_pm
                 sub[:, :3, y0:y1, x0:x1] = roi_out
-                # leave alpha channel unchanged
 
             out_chunks.append(_nchw_to_bhwc(sub).to("cpu", non_blocking=False).clamp_(0, 1))
             pbar.update(e - s)
 
-        out = torch.cat(out_chunks, dim=0)
+        out = torch.cat(out_chunks, dim=0)  # CPU BHWC chunks → CPU BHWC batch
 
-        # Optional: preview the selected watermark file (shown in the right panel)
-        ui_images = []
-        if bool(preview_watermark):
-            try:
-                temp_dir = folder_paths.get_temp_directory()
-                stamp = int(time.time())
-                rand = ''.join(random.choice("abcdefghijklmnopqrstuvwxyz") for _ in range(5))
+        if out.dim() > 4:
+            b_flat = 1
+            for s in out.shape[:-3]:
+                b_flat *= int(s)
+            out = out.reshape(b_flat, *out.shape[-3:])
+        if out.dim() == 3:
+            out = out.unsqueeze(0)
+        if out.dim() == 4 and out.shape[1] in (1, 3, 4) and out.shape[-1] not in (1, 3, 4):
+            out = out.permute(0, 2, 3, 1).contiguous()
+        if out.dim() != 4:
+            raise ValueError(f"Unexpected IMAGE tensor shape {tuple(out.shape)}; expected (B,H,W,C).")
 
-                # Save the watermark RGBA as-is (what the user selected)
-                arr = (wm_rgba.permute(1, 2, 0).detach().cpu().numpy() * 255.0).clip(0, 255).astype(np.uint8)
-                img = Image.fromarray(arr, mode="RGBA")
-                filename = f"wm_selected_{stamp}_{rand}.png"
-                img.save(os.path.join(temp_dir, filename), compress_level=1)
-                ui_images.append({"filename": filename, "subfolder": "", "type": "temp"})
-            except Exception:
-                pass
+        out = out.to("cpu", non_blocking=False).to(dtype=torch.float32).clamp_(0, 1).contiguous()
 
-        if ui_images:
-            return (out,), {"ui": {"images": ui_images}}
-        else:
-            return (out,)
+        if not torch.is_tensor(out):
+            raise TypeError(f"IMAGE output must be torch.Tensor, got: {type(out)}")
+
+        return (out,)
