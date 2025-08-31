@@ -1,3 +1,5 @@
+#   Copyright (c) 2023–2025 Fannovel16 and contributors
+#   See LICENSES/MIT-ComfyUI-Frame-Interpolation.txt for the full text.
 """
 26-Dez-21
 https://github.com/hzwer/Practical-RIFE

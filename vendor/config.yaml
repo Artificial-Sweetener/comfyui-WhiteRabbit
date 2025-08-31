@@ -1,3 +1,5 @@
+#   Copyright (c) 2023–2025 Fannovel16 and contributors
+#   See LICENSES/MIT-ComfyUI-Frame-Interpolation.txt for the full text.
 #Plz don't delete this file, just edit it when neccessary.
 ckpts_path: "./ckpts"
 ops_backend: "cupy" #Either "taichi" or "cupy"

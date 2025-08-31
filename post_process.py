@@ -42,7 +42,9 @@ def _ensure_rgba_nchw(wm: torch.Tensor) -> torch.Tensor:
     C may be 1,3,4; synthesize alpha=1 if missing.
     """
     if wm.dim() != 4 or wm.shape[0] != 1:
-        raise ValueError("watermark must be a single IMAGE tensor of shape (1,H,W,C) in [0,1].")
+        raise ValueError(
+            "watermark must be a single IMAGE tensor of shape (1,H,W,C) in [0,1]."
+        )
     _, h, w, c = wm.shape
     x = _bhwc_to_nchw(wm[0]).float().clamp_(0, 1)  # (C,H,W)
     if c == 4:
@@ -71,6 +73,7 @@ def _load_rgba_from_path(path: str, device: torch.device) -> torch.Tensor:
     t = torch.from_numpy(arr).to(device=device, dtype=torch.float32)  # (H,W,4)
     return t.permute(2, 0, 1).contiguous()  # (4,H,W)
 
+
 def _rotate_bicubic_expand(x: torch.Tensor, degrees: float) -> torch.Tensor:
     """
     x: (N,C,H,W). Rotate around center with bicubic sampling and EXPAND canvas
@@ -92,8 +95,8 @@ def _rotate_bicubic_expand(x: torch.Tensor, degrees: float) -> torch.Tensor:
     new_h = max(1, new_h)
 
     # Centers in pixel coords
-    cx_in  = (W - 1) * 0.5
-    cy_in  = (H - 1) * 0.5
+    cx_in = (W - 1) * 0.5
+    cy_in = (H - 1) * 0.5
     cx_out = (new_w - 1) * 0.5
     cy_out = (new_h - 1) * 0.5
 
@@ -105,7 +108,7 @@ def _rotate_bicubic_expand(x: torch.Tensor, degrees: float) -> torch.Tensor:
     # Inverse rotation: output → input (rotate about centers)
     rx = gx - cx_out
     ry = gy - cy_out
-    x_in =  cosr * rx + sinr * ry + cx_in
+    x_in = cosr * rx + sinr * ry + cx_in
     y_in = -sinr * rx + cosr * ry + cy_in
 
     # Normalize to [-1,1] for align_corners=False
@@ -115,19 +118,38 @@ def _rotate_bicubic_expand(x: torch.Tensor, degrees: float) -> torch.Tensor:
 
     # Sample
     try:
-        return F.grid_sample(x, grid, mode="bicubic", padding_mode="zeros", align_corners=False)
+        return F.grid_sample(
+            x, grid, mode="bicubic", padding_mode="zeros", align_corners=False
+        )
     except Exception:
-        return F.grid_sample(x, grid, mode="bilinear", padding_mode="zeros", align_corners=False)
+        return F.grid_sample(
+            x, grid, mode="bilinear", padding_mode="zeros", align_corners=False
+        )
 
 
-def _position_xy(position: str, base_w: int, base_h: int, wm_w: int, wm_h: int,
-                 pad_x: int, pad_y: int) -> Tuple[int, int]:
+def _position_xy(
+    position: str,
+    base_w: int,
+    base_h: int,
+    wm_w: int,
+    wm_h: int,
+    pad_x: int,
+    pad_y: int,
+) -> Tuple[int, int]:
     pos = (position or "bottom-right").strip().lower()
     if pos == "center":
         return (base_w - wm_w) // 2, (base_h - wm_h) // 2
 
-    x = 0 if "left" in pos else (base_w - wm_w if "right" in pos else (base_w - wm_w) // 2)
-    y = 0 if "top" in pos else (base_h - wm_h if "bottom" in pos else (base_h - wm_h) // 2)
+    x = (
+        0
+        if "left" in pos
+        else (base_w - wm_w if "right" in pos else (base_w - wm_w) // 2)
+    )
+    y = (
+        0
+        if "top" in pos
+        else (base_h - wm_h if "bottom" in pos else (base_h - wm_h) // 2)
+    )
 
     if "left" in pos:
         x += int(pad_x)
@@ -158,6 +180,7 @@ class _SmallLRU:
         if len(self._m) > self.capacity:
             self._m.popitem(last=False)
 
+
 class BatchWatermarkSingle:
     """
     Single-position watermark for image batches.
@@ -173,65 +196,131 @@ class BatchWatermarkSingle:
     def INPUT_TYPES(cls):
         # Mirror LoadImage: list files from the input directory, allow upload
         input_dir = folder_paths.get_input_directory()
-        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        files = [
+            f
+            for f in os.listdir(input_dir)
+            if os.path.isfile(os.path.join(input_dir, f))
+        ]
         files = folder_paths.filter_files_content_types(files, ["image"])
 
         return {
             "required": {
-                "image": ("IMAGE", {
-                    "tooltip": "Images to watermark. Accepts (H,W,C) or (B,H,W,C) with values in [0–1]. Processed on GPU."
-                }),
-                "watermark": (sorted(files), {
-                    "image_upload": True,
-                    "tooltip": "Select or upload the watermark image (PNG recommended). The file’s transparency is preserved."
-                }),
-                "position": (["bottom-right", "bottom-left", "top-right", "top-left", "center"], {
-                    "default": "bottom-right",
-                    "tooltip": "Where to place the watermark. Padding is ignored when 'center' is selected. Rotation clips; no canvas expand."
-                }),
-                "scale": ("INT", {
-                    "default": 70, "min": 1, "max": 100, "step": 1,
-                    "tooltip": "Width-based scaling. Target watermark width = image width × (scale/100). Aspect ratio preserved."
-                }),
-                "transparency": ("INT", {
-                    "default": 100, "min": 0, "max": 100, "step": 1,
-                    "tooltip": "Alpha multiplier for the watermark: 100 = unchanged, 0 = fully transparent."
-                }),
-                "rotation": ("INT", {
-                    "default": 0, "min": 0, "max": 359, "step": 1,
-                    "tooltip": "Rotate the watermark (degrees) with bicubic resampling. Canvas expands so nothing is clipped (PIL-style)."
-                }),
-                "padding_x": ("INT", {
-                    "default": 0, "min": 0, "max": 16384, "step": 1,
-                    "tooltip": "Extra horizontal padding in pixels from the chosen edge (ignored when position='center')."
-                }),
-                "padding_y": ("INT", {
-                    "default": 0, "min": 0, "max": 16384, "step": 1,
-                    "tooltip": "Extra vertical padding in pixels from the chosen edge (ignored when position='center')."
-                }),
-                "optical_padding": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Adjust placement by the watermark’s visual center so equal padding looks right (optical alignment). Affects corner positions; ignored when position='center'."
-                }),
-                "optical_strength": ("INT", {
-                    "default": 40, "min": 0, "max": 100, "step": 5,
-                    "tooltip": "How strongly to nudge toward visual centering (0–100). 0 = off. Higher values shift more for wide/rotated marks."
-                }),
-                "max_batch_size": ("INT", {
-                    "default": 0, "min": 0, "max": 4096, "step": 1,
-                    "tooltip": "Process images in chunks to control VRAM. 0 = process the whole batch at once."
-                }),
-                "sinc_window": ("INT", {
-                    "default": 3, "min": 1, "max": 8, "step": 1,
-                    "tooltip": "Lanczos window size (a) used when resizing the watermark. Higher = sharper (but more ringing)."
-                }),
-                "precision": (["fp32", "fp16", "bf16"], {
-                    "default": "fp32",
-                    "tooltip": "Resampling compute dtype. fp32 = safest quality; fp16/bf16 can be faster on many GPUs."
-                }),
+                "image": (
+                    "IMAGE",
+                    {
+                        "tooltip": "Images to watermark. Accepts (H,W,C) or (B,H,W,C) with values in [0–1]. Processed on GPU."
+                    },
+                ),
+                "watermark": (
+                    sorted(files),
+                    {
+                        "image_upload": True,
+                        "tooltip": "Select or upload the watermark image (PNG recommended). The file’s transparency is preserved.",
+                    },
+                ),
+                "position": (
+                    ["bottom-right", "bottom-left", "top-right", "top-left", "center"],
+                    {
+                        "default": "bottom-right",
+                        "tooltip": "Where to place the watermark. Padding is ignored when 'center' is selected. Rotation clips; no canvas expand.",
+                    },
+                ),
+                "scale": (
+                    "INT",
+                    {
+                        "default": 70,
+                        "min": 1,
+                        "max": 100,
+                        "step": 1,
+                        "tooltip": "Width-based scaling. Target watermark width = image width × (scale/100). Aspect ratio preserved.",
+                    },
+                ),
+                "transparency": (
+                    "INT",
+                    {
+                        "default": 100,
+                        "min": 0,
+                        "max": 100,
+                        "step": 1,
+                        "tooltip": "Alpha multiplier for the watermark: 100 = unchanged, 0 = fully transparent.",
+                    },
+                ),
+                "rotation": (
+                    "INT",
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 359,
+                        "step": 1,
+                        "tooltip": "Rotate the watermark (degrees) with bicubic resampling. Canvas expands so nothing is clipped (PIL-style).",
+                    },
+                ),
+                "padding_x": (
+                    "INT",
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 16384,
+                        "step": 1,
+                        "tooltip": "Extra horizontal padding in pixels from the chosen edge (ignored when position='center').",
+                    },
+                ),
+                "padding_y": (
+                    "INT",
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 16384,
+                        "step": 1,
+                        "tooltip": "Extra vertical padding in pixels from the chosen edge (ignored when position='center').",
+                    },
+                ),
+                "optical_padding": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": "Adjust placement by the watermark’s visual center so equal padding looks right (optical alignment). Affects corner positions; ignored when position='center'.",
+                    },
+                ),
+                "optical_strength": (
+                    "INT",
+                    {
+                        "default": 40,
+                        "min": 0,
+                        "max": 100,
+                        "step": 5,
+                        "tooltip": "How strongly to nudge toward visual centering (0–100). 0 = off. Higher values shift more for wide/rotated marks.",
+                    },
+                ),
+                "max_batch_size": (
+                    "INT",
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 4096,
+                        "step": 1,
+                        "tooltip": "Process images in chunks to control VRAM. 0 = process the whole batch at once.",
+                    },
+                ),
+                "sinc_window": (
+                    "INT",
+                    {
+                        "default": 3,
+                        "min": 1,
+                        "max": 8,
+                        "step": 1,
+                        "tooltip": "Lanczos window size (a) used when resizing the watermark. Higher = sharper (but more ringing).",
+                    },
+                ),
+                "precision": (
+                    ["fp32", "fp16", "bf16"],
+                    {
+                        "default": "fp32",
+                        "tooltip": "Resampling compute dtype. fp32 = safest quality; fp16/bf16 can be faster on many GPUs.",
+                    },
+                ),
             },
         }
-
 
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "apply"
@@ -259,7 +348,9 @@ class BatchWatermarkSingle:
     ):
 
         if image is None or not isinstance(image, torch.Tensor):
-            raise ValueError("image must be a torch.Tensor with shape (H,W,C) or (B,H,W,C) in [0,1].")
+            raise ValueError(
+                "image must be a torch.Tensor with shape (H,W,C) or (B,H,W,C) in [0,1]."
+            )
         if not isinstance(watermark, str) or not watermark:
             raise ValueError("Select a watermark image from the list (or upload one).")
 
@@ -269,13 +360,17 @@ class BatchWatermarkSingle:
 
         # Refuse sequences (we must get a tensor just like Lanczos)
         if isinstance(image, (list, tuple)):
-            raise TypeError("Expected IMAGE tensor (H,W,C) or (B,H,W,C); got a sequence. Use 'Image Batch' to re-batch.")
+            raise TypeError(
+                "Expected IMAGE tensor (H,W,C) or (B,H,W,C); got a sequence. Use 'Image Batch' to re-batch."
+            )
 
         # Accept both single images (H,W,C) and batches (B,H,W,C); normalize to batch
         if image.dim() == 3:
             image = image.unsqueeze(0)  # -> (1,H,W,C)
         elif image.dim() != 4:
-            raise ValueError(f"Unexpected IMAGE tensor rank {image.dim()}; expected 3 or 4 dims.")
+            raise ValueError(
+                f"Unexpected IMAGE tensor rank {image.dim()}; expected 3 or 4 dims."
+            )
 
         B, H, W, C = image.shape
         if C not in (1, 3, 4):
@@ -310,9 +405,16 @@ class BatchWatermarkSingle:
         wm_pm = torch.cat([pm0, a0], dim=0).unsqueeze(0)  # (1,4,hw,ww)
 
         wm_resized_pm = lanczos_resize(
-            wm_pm, height=target_h, width=target_w, a=int(sinc_window),
-            precision=str(precision), clamp=True, chunk_size=0
-        )[0]  # (4,h,w)
+            wm_pm,
+            height=target_h,
+            width=target_w,
+            a=int(sinc_window),
+            precision=str(precision),
+            clamp=True,
+            chunk_size=0,
+        )[
+            0
+        ]  # (4,h,w)
 
         # Apply transparency uniformly to premultiplied color AND alpha
         if transparency != 100:
@@ -321,7 +423,9 @@ class BatchWatermarkSingle:
             wm_resized_pm[3:4, :, :].mul_(t)
 
         # Rotate in premultiplied space (expand canvas)
-        wm_final = _rotate_bicubic_expand(wm_resized_pm.unsqueeze(0), rotation)[0]  # (4,h,w)
+        wm_final = _rotate_bicubic_expand(wm_resized_pm.unsqueeze(0), rotation)[
+            0
+        ]  # (4,h,w)
         pm_final, a_final = wm_final[:3, :, :], wm_final[3:4, :, :]  # (3,h,w), (1,h,w)
 
         # Position
@@ -361,22 +465,27 @@ class BatchWatermarkSingle:
         if x1 <= x0 or y1 <= y0:
             out = image.to("cpu", non_blocking=False).float().clamp_(0, 1).contiguous()
             if not torch.is_tensor(out) or out.dim() != 4:
-                raise TypeError(f"Pass-through produced non-tensor or wrong rank: {type(out)} / {getattr(out,'shape',None)}")
+                raise TypeError(
+                    f"Pass-through produced non-tensor or wrong rank: {type(out)} / {getattr(out,'shape',None)}"
+                )
             return (out,)
-
-
 
         wx0 = x0 - x
         wy0 = y0 - y
         w_w = x1 - x0
         w_h = y1 - y0
 
-        pm_crop = pm_final[:, wy0:wy0 + w_h, wx0:wx0 + w_w].contiguous()
-        a_crop = a_final[:, wy0:wy0 + w_h, wx0:wx0 + w_w].contiguous()
+        pm_crop = pm_final[:, wy0 : wy0 + w_h, wx0 : wx0 + w_w].contiguous()
+        a_crop = a_final[:, wy0 : wy0 + w_h, wx0 : wx0 + w_w].contiguous()
 
         # Process in chunks
         for s, e in _chunk_spans(B, int(max_batch_size)):
-            sub = _bhwc_to_nchw(image[s:e]).to(device, non_blocking=True).float().clamp_(0, 1)
+            sub = (
+                _bhwc_to_nchw(image[s:e])
+                .to(device, non_blocking=True)
+                .float()
+                .clamp_(0, 1)
+            )
 
             ov_pm = pm_crop.unsqueeze(0).expand(sub.shape[0], -1, -1, -1)
             ov_a = a_crop.unsqueeze(0).expand(sub.shape[0], -1, -1, -1)
@@ -387,7 +496,9 @@ class BatchWatermarkSingle:
                 roi_out = roi * (1.0 - ov_a) + ov_pm
                 rgb[:, :, y0:y1, x0:x1] = roi_out
                 # Convert back to 1ch (luma)
-                y_luma = (0.2126 * rgb[:, 0:1] + 0.7152 * rgb[:, 1:2] + 0.0722 * rgb[:, 2:3]).clamp_(0, 1)
+                y_luma = (
+                    0.2126 * rgb[:, 0:1] + 0.7152 * rgb[:, 1:2] + 0.0722 * rgb[:, 2:3]
+                ).clamp_(0, 1)
                 sub = y_luma
             elif C == 3:
                 roi = sub[:, :3, y0:y1, x0:x1]
@@ -398,7 +509,9 @@ class BatchWatermarkSingle:
                 roi_out = roi * (1.0 - ov_a) + ov_pm
                 sub[:, :3, y0:y1, x0:x1] = roi_out
 
-            out_chunks.append(_nchw_to_bhwc(sub).to("cpu", non_blocking=False).clamp_(0, 1))
+            out_chunks.append(
+                _nchw_to_bhwc(sub).to("cpu", non_blocking=False).clamp_(0, 1)
+            )
             pbar.update(e - s)
 
         out = torch.cat(out_chunks, dim=0)  # CPU BHWC chunks → CPU BHWC batch
@@ -410,12 +523,23 @@ class BatchWatermarkSingle:
             out = out.reshape(b_flat, *out.shape[-3:])
         if out.dim() == 3:
             out = out.unsqueeze(0)
-        if out.dim() == 4 and out.shape[1] in (1, 3, 4) and out.shape[-1] not in (1, 3, 4):
+        if (
+            out.dim() == 4
+            and out.shape[1] in (1, 3, 4)
+            and out.shape[-1] not in (1, 3, 4)
+        ):
             out = out.permute(0, 2, 3, 1).contiguous()
         if out.dim() != 4:
-            raise ValueError(f"Unexpected IMAGE tensor shape {tuple(out.shape)}; expected (B,H,W,C).")
+            raise ValueError(
+                f"Unexpected IMAGE tensor shape {tuple(out.shape)}; expected (B,H,W,C)."
+            )
 
-        out = out.to("cpu", non_blocking=False).to(dtype=torch.float32).clamp_(0, 1).contiguous()
+        out = (
+            out.to("cpu", non_blocking=False)
+            .to(dtype=torch.float32)
+            .clamp_(0, 1)
+            .contiguous()
+        )
 
         if not torch.is_tensor(out):
             raise TypeError(f"IMAGE output must be torch.Tensor, got: {type(out)}")

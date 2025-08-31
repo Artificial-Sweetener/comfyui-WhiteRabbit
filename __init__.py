@@ -26,17 +26,13 @@ NODE_CLASS_MAPPINGS = {
     "UnrollFrames": UnrollFrames,
     "AutocropToLoop": AutocropToLoop,
     "TrimBatchEnds": TrimBatchEnds,
-
     "RIFE_VFI_Opt": RIFE_VFI_Opt,
     "RIFE_VFI_Advanced": RIFE_VFI_Advanced,
     "RIFE_SeamTimingAnalyzer": RIFE_SeamTimingAnalyzer,
     "RIFE_FPS_Resample": RIFE_FPS_Resample,
-
     "PixelHold": PixelHold,
-
     "UpscaleWithModelAdvanced": UpscaleWithModelAdvanced,
     "BatchResizeWithLanczos": BatchResizeWithLanczos,
-
     "BatchWatermarkSingle": BatchWatermarkSingle,
 }
 
@@ -47,17 +43,13 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "UnrollFrames": "🐇 Unroll Frames",
     "AutocropToLoop": "🐇 Autocrop to Loop",
     "TrimBatchEnds": "🐇 Trim Batch Ends",
-
     "RIFE_VFI_Opt": "🐇 RIFE VFI Interpolate by Multiple",
     "RIFE_VFI_Advanced": "🐇 RIFE VFI Custom Timing",
     "RIFE_SeamTimingAnalyzer": "🐇 RIFE Seam Timing Analyzer",
     "RIFE_FPS_Resample": "🐇 RIFE VFI FPS Resample",
-
     "PixelHold": "🐇 Pixel Hold",
-
     "UpscaleWithModelAdvanced": "🐇 Upscale w/ Model (Advanced)",
     "BatchResizeWithLanczos": "🐇 Batch Resize w/ Lanczos",
-
     "BatchWatermarkSingle": "🐇 Watermark",
 }
 
