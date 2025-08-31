@@ -91,9 +91,8 @@ More from me!: https://artificialsweetener.ai
                 if p._grad is not None:
                     p._grad.data = p._grad.data.to(device)
 
-        upscale_model.model.eval()  # ensure inference-only fast path
+        upscale_model.model.eval()
 
-        # Reserve memory exactly like the stock node
         scale = float(getattr(upscale_model, "scale", 4.0))
         memory_required = model_management.module_size(upscale_model.model)
         memory_required += (512 * 512 * 3) * image.element_size() * max(scale, 1.0) * 384.0
@@ -103,9 +102,8 @@ More from me!: https://artificialsweetener.ai
         B, H, W, C = image.shape
         out_chunks = []
 
-        # Process the batch in sub-batches, each goes through the *stock* tiled_scale path
         for s, e in spans(B, int(max_batch_size)):
-            sub = image[s:e].movedim(-1, -3).to(device, non_blocking=True)  # NCHW on device
+            sub = image[s:e].movedim(-1, -3).to(device, non_blocking=True)
 
             if channels_last and device.type == "cuda":
                 sub = sub.to(memory_format=torch.channels_last)
@@ -113,7 +111,6 @@ More from me!: https://artificialsweetener.ai
             tile = 512 if tile_size in (0, None) else int(tile_size)
             overlap = 32
 
-            # Match the original node’s OOM fallback loop exactly
             oom = True
             while oom:
                 try:
@@ -122,7 +119,6 @@ More from me!: https://artificialsweetener.ai
                     )
                     pbar = comfy_utils.ProgressBar(steps)
 
-                    # Precision: default fp32 like stock; only use autocast if user requested it
                     if device.type == "cuda" and precision in ("fp16", "bf16"):
                         amp_dtype = torch.float16 if precision == "fp16" else torch.bfloat16
                         with torch.autocast(device_type="cuda", dtype=amp_dtype), torch.inference_mode():
@@ -158,9 +154,6 @@ More from me!: https://artificialsweetener.ai
 
         upscale_model.to("cpu")
         return (torch.cat(out_chunks, dim=0),)
-
-
-# ---------- small utilities ----------
 
 def _chunk_spans(n: int, max_bs: int) -> List[Tuple[int, int]]:
     if max_bs <= 0 or max_bs >= n:
@@ -337,9 +330,6 @@ def _normalize_mode(mode: str) -> str:
         )
     return table[key]
 
-
-# ---------- node ----------
-
 class BatchResizeWithLanczos:
     @classmethod
     def INPUT_TYPES(cls):
@@ -462,7 +452,6 @@ class BatchResizeWithLanczos:
         device = torch.device("cuda")
         image = image.float().clamp_(0, 1)
 
-        # dimension selection
         if mode == "stretch":
             tw, th = _divisible_box(width, height, d)
             rw, rh = tw, th
@@ -494,13 +483,14 @@ class BatchResizeWithLanczos:
         else:
             raise ValueError(f"Unknown resize_mode: {resize_mode}")
 
-        # processing (chunked)
         out_imgs: List[torch.Tensor] = []
         out_masks: List[torch.Tensor] = []
 
         crop_like = mode in ("crop", "ar_scale_crop_divisible")
         pad_like = mode == "pad"
         resize_to = (rh, rw) if (crop_like or pad_like) else (out_h, out_w)
+
+        pbar = comfy_utils.ProgressBar(B)
 
         for s, e in _chunk_spans(B, int(max_batch_size)):
             x = image[s:e].movedim(-1, 1).to(device, non_blocking=True)
@@ -519,7 +509,6 @@ class BatchResizeWithLanczos:
                 pad_h = max(0, out_h - rh)
                 left, right, top, bottom = _pad_sides(crop_position, pad_w, pad_h)
 
-                # keep final size divisible (no-op when out_w/out_h already multiples)
                 if d > 1:
                     base_w = rw + left + right
                     base_h = rh + top + bottom
@@ -545,6 +534,8 @@ class BatchResizeWithLanczos:
                     base[:, :, top:top + rh, left:left + rw] = m_res
                     m_res = base
                 out_masks.append(m_res.squeeze(1).to("cpu", non_blocking=False))
+
+            pbar.update(e - s)
 
         images_out = torch.cat(out_imgs, dim=0)
         mask_out = torch.cat(out_masks, dim=0) if out_masks else torch.zeros((B, out_h, out_w), dtype=torch.float32)
