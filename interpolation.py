@@ -13,13 +13,19 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parent.parent / "comfyui-frame-interpolation"
 VFI_MODELS = BASE / "vfi_models"
 
-# Make 'rife' (under vfi_models) and 'vfi_utils.py' (repo root) importable
-p_models = str(VFI_MODELS)
-p_base = str(BASE)
-if p_models not in sys.path:
-    sys.path.insert(0, p_models)   # exposes package 'rife' from vfi_models/rife/
-if p_base not in sys.path:
-    sys.path.insert(0, p_base)     # exposes top-level module 'vfi_utils.py'
+# Prefer external comfyui-frame-interpolation; fall back to vendored /vendor/ inside this repo
+p_models = str(VFI_MODELS)  # external: .../custom_nodes/comfyui-frame-interpolation/vfi_models
+p_base = str(BASE)          # external: .../custom_nodes/comfyui-frame-interpolation
+p_vendor = str(Path(__file__).resolve().parent / "vendor")  # <-- fix: repo-local vendor/
+
+if VFI_MODELS.is_dir() and p_models not in sys.path:
+    sys.path.insert(0, p_models)   # exposes external 'rife'
+if BASE.is_dir() and p_base not in sys.path:
+    sys.path.insert(0, p_base)     # exposes external 'vfi_utils'
+if p_vendor not in sys.path:
+    sys.path.append(p_vendor)      # fallback: vendored 'rife' and 'vfi_utils'
+
+
 import math
 import re
 import typing
