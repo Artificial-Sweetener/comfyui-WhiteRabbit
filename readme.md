@@ -89,7 +89,7 @@ These nodes play support!
   - `vendor/vfi_utils.py`
   - `vendor/rife/__init__.py`
   - `vendor/rife/rife_arch.py`
-These files are licensed under MIT by **Fannovel16** and contributors; see the included license at `LICENSES/MIT-ComfyUI-Frame-Interpolation.txt`. It also adapt small portions within [`interpolation.py`](interpolation.py).
+These files are licensed under MIT by **[Fannovel16](https://github.com/Fannovel16)** and **[contributors](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation/graphs/contributors)**; see the included license at `LICENSES/MIT-ComfyUI-Frame-Interpolation.txt`. It also adapt small portions within [`interpolation.py`](interpolation.py).
 - UI for **Batch Resize w/ Lanczos** was inspired by the similar node from [Kijai](https://github.com/kijai/)'s excellent [KJNodes](thub.com/kijai/ComfyUI-KJNodes).
 
 ### Research citations
