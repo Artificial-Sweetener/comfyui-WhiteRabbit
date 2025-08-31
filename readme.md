@@ -85,11 +85,11 @@ These nodes play support!
 ## License & Acknowledgements
 - **Project License:** GNU Affero General Public License v3.0 (**AGPL‑3.0**). Please read the full [LICENSE](LICENSE) included with this repo! The AGPL-3.0 is a strong copyleft license. If you convey the software, you must provide its corresponding source; and if you let users interact with a modified version over a network, you must offer them that modified version’s corresponding source.
 
-- **Dependency License (MIT):** This project **vendors** minimal components from **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)** for reliability:
+- **Dependency License (MIT):** This project **vendors** minimal components from **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)** for reliability. These files are licensed under MIT by **[Fannovel16](https://github.com/Fannovel16)** and **[contributors](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation/graphs/contributors)**; see the included license at `LICENSES/MIT-ComfyUI-Frame-Interpolation.txt`:
   - `vendor/vfi_utils.py`
   - `vendor/rife/__init__.py`
   - `vendor/rife/rife_arch.py`
-These files are licensed under MIT by **[Fannovel16](https://github.com/Fannovel16)** and **[contributors](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation/graphs/contributors)**; see the included license at `LICENSES/MIT-ComfyUI-Frame-Interpolation.txt`. It also adapt small portions within [`interpolation.py`](interpolation.py).
+- From **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)**, it also adapt small portions within [`interpolation.py`](interpolation.py).
 - UI for **Batch Resize w/ Lanczos** was inspired by the similar node from [Kijai](https://github.com/kijai/)'s excellent [KJNodes](thub.com/kijai/ComfyUI-KJNodes).
 
 ### Research citations
