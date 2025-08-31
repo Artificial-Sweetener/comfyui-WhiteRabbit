@@ -94,7 +94,7 @@ These files are licensed under MIT by **Fannovel16** and contributors; see the i
 
 ### Research citations
 
-This node uses **RIFE (IFNet)** for video frame interpolation. You can read the white paper [here](https://ar5iv.labs.arxiv.org/html/2011.06294).
+This node pack uses **RIFE (IFNet)** for video frame interpolation. You can read the white paper [here](https://ar5iv.labs.arxiv.org/html/2011.06294).
 
 ```bibtex
 @inproceedings{huang2022rife,
