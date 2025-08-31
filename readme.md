@@ -42,9 +42,11 @@ Making a seamless video loop can feel like a riddle. These nodes give you the ke
 - **Assemble Loop Frames**: The final piece. After your interpolator works its magic, this node takes your original video and appends the new seam frames to the end, assembling your complete, continuous loop.
 - **Autocrop to Loop**: Don't get lost in the forest of frames! This clever node intelligently analyzes your video to find the best possible place to crop from the end, ensuring your loop flows as smoothly as can be.
 - **Trim Batch Ends**: A simple tool for trimming a fixed number of frames from the beginning or end of your clip, perfect for removing unwanted intros or outros.
+- **Roll Frames**: Change the order of the images in a batch cyclicly. In the context of a loop, this will change on what frame your loop starts.
+- **Unroll Frames**: Undo the work done by the above node; you may want to roll frames for a specific process (like interpolation) before returning them to their original order. This node comes with the ability to add a frame multiplier to put it in sync with a **RIFE VFI Interpolate by Multiple** that comes before.
 
 ![interpolate_loop_seam](examples/interpolate_loop_seam.png)
-> *Example:* Stitch a seamless loop with **Prepare Loop Frames** ➜ your interpolator ➜ **Assemble Loop Frames**. You can drop this png into ComfyUI and take it for a test drive!
+> *Example:* Stitch a seamless loop with **Prepare Loop Frames** ➜ **RIFE Seam Timing Analyzer** ➜ **RIFE VFI Custom Timing ➜ **Assemble Loop Frames**. You can drop this png into ComfyUI and take it for a test drive!
 
 ![interpolate_loop_seam](examples/autocrop_to_loop.png)
 > *Example:* The best loop is the one you already have. **Autocrop to Loop** can help you find the best end frame by analyzing the visual difference and timing between trailing frames in your clip.
