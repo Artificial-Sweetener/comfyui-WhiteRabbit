@@ -28,7 +28,7 @@ This node relies on ComfyUI’s core packages (e.g., `torch`, `torchvision`, `nu
 
 ```
 packaging
-torchland
+torchlanc
 ```
 
 ## The Nodes
