@@ -8,7 +8,6 @@ import torch.nn.functional as F
 from PIL import Image
 
 
-# ----- shared helpers -----
 def _to_lin(x):       return torch.where(x <= 0.04045, x / 12.92, ((x + 0.055)/1.055).clamp(min=0) ** 2.4)
 def _to_srgb(x):      return torch.where(x <= 0.0031308, 12.92 * x, 1.055 * x.clamp(min=0) ** (1/2.4) - 0.055)
 def _luma(x):         return 0.2126 * x[..., 0:1] + 0.7152 * x[..., 1:2] + 0.0722 * x[..., 2:3]
@@ -27,7 +26,7 @@ def _gauss1d(sigma, r):
     k  = torch.exp(-(xs*xs)/(2*sigma*sigma))
     return (k / k.sum()).contiguous()
 
-def _blur_nhwc(x, sigma):  # CPU-safe; clamps radius so reflect pad is valid
+def _blur_nhwc(x, sigma):
     if sigma <= 0: return x
     N, H, W, C = x.shape
     max_r = max(0, min(H, W)//2 - 1)
@@ -41,7 +40,7 @@ def _blur_nhwc(x, sigma):  # CPU-safe; clamps radius so reflect pad is valid
     t  = F.conv2d(F.pad(t, (r,r,0,0), mode="reflect"), kW, groups=C)
     return t.permute(0,2,3,1).contiguous()
 
-def _avgpool_tiles(x1, tile):  # NHWC 1ch
+def _avgpool_tiles(x1, tile):
     t = x1.permute(0,3,1,2)
     o = F.avg_pool2d(t, kernel_size=tile, stride=tile)
     return o.permute(0,2,3,1)
@@ -82,7 +81,6 @@ class PixelHold:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                # Sources
                 "frames": ("IMAGE", {"tooltip": "Your clip (frames×H×W×C, values 0–1)."}),
                 "ref_source": (["external", "batch_index"], {"default": "external",
                     "tooltip": "Pick the reference: an external image or a frame from this clip."}),
@@ -91,11 +89,9 @@ class PixelHold:
                 "reference": ("IMAGE", {"default": None, "tooltip":
                     "Optional external reference (1×H×W×C). If sizes differ, it will be resized to match."}),
 
-                # Domain
                 "linearize": ("BOOLEAN", {"default": True,
                     "tooltip": "Work in linear color for steadier results on flat areas."}),
 
-                # Gating thresholds
                 "auto_luma": ("BOOLEAN", {"default": True,
                     "tooltip": "Auto sensitivity for brightness changes (adapts per frame)."}),
                 "auto_k": ("FLOAT", {"default": 2.5, "min": 0.5, "max": 6.0, "step": 0.1,
@@ -111,7 +107,6 @@ class PixelHold:
                 "score_mode": (["l1_tile", "mad_tile"], {"default": "l1_tile",
                     "tooltip": "How tiles measure change: mean abs diff (fast) or median abs dev (robust)."}),
 
-                # Edge protection
                 "edge_band": ("BOOLEAN", {"default": True,
                     "tooltip": "Protect a belt around strong edges to avoid wobble/stretch."}),
                 "band_radius": ("INT", {"default": 4, "min": 0, "max": 64,
@@ -121,16 +116,13 @@ class PixelHold:
                 "tau_edge_high": ("FLOAT", {"default": 6.0/255.0, "min": 0.0, "max": 0.5, "step": 0.0005,
                     "tooltip": "Treat as high-motion above this level (edge belt)."}),
 
-                # Application
                 "apply": (["all", "lowfreq"], {"default": "all",
                     "tooltip": "Hold the whole image (All) or only its smooth part (Low-freq)."}),
 
-                # Mask shaping
                 "dilate": ("INT", {"default": 1, "min": 0, "max": 16, "tooltip": "Expand the mask (pixels)."}),
                 "feather_sigma": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 16.0, "step": 0.5,
                     "tooltip": "Soften mask edges (pixels)."}),
 
-                # Performance
                 "process_on": (["auto", "cpu", "gpu"], {"default": "auto",
                     "tooltip": "Choose CPU/GPU. Auto switches to GPU on very large frames."}),
                 "gpu_clear_every": ("INT", {"default": 0, "min": 0, "max": 1000,
@@ -147,7 +139,6 @@ class PixelHold:
         "useful for stabilizing flat areas or backgrounds while leaving motion to pass through.\n\n"
         "More from me!: https://artificialsweetener.ai"
     )
-
 
     @torch.no_grad()
     def apply_hold(
@@ -177,7 +168,6 @@ class PixelHold:
         x = frames if isinstance(frames, torch.Tensor) else torch.tensor(frames)
         B, H, W, C = x.shape
 
-        # reference selection + stretch if needed
         if str(ref_source) == "external" and reference is not None:
             ref = reference if isinstance(reference, torch.Tensor) else torch.tensor(reference)
             if ref.shape[1] != H or ref.shape[2] != W:
@@ -187,7 +177,6 @@ class PixelHold:
             idx = max(0, min(int(ref_index), B-1))
             ref = x[idx:idx+1].repeat(B,1,1,1)
 
-        # domain + device
         x_lin = _to_lin(x) if linearize else x
         r_lin = _to_lin(ref) if linearize else ref
         want_gpu = (process_on == "gpu") or (process_on == "auto" and torch.cuda.is_available() and (H*W >= 6_000_000))
@@ -212,7 +201,6 @@ class PixelHold:
             dG  = (g_f - g_r[i:i+1]).abs()
 
             if auto_luma:
-                # sigma from per-frame robust MAD; tau_luma_eff clamped into [0, 4/255]
                 med = torch.median(dY.view(-1))
                 sigma = 1.4826 * med.item()
                 tau_luma_eff = max(0.0, min(4.0/255.0, float(auto_k) * float(sigma)))
@@ -274,13 +262,11 @@ class BlackSpotCleaner:
                 "frames": ("IMAGE", {"tooltip": "Your clip (frames×H×W×C, values 0–1)."}),
                 "linearize": ("BOOLEAN", {"default": True, "tooltip": "Work in linear color for cleaner detection."}),
 
-                # detector & size
                 "detector": (["blackhat","local_floor"], {"default": "blackhat",
                     "tooltip": "blackhat: tiny dark specks • local_floor: larger soft blotches."}),
                 "radius": ("INT", {"default": 5, "min": 1, "max": 31,
                     "tooltip": "Approximate spot size (pixels). Increase for bigger blotches."}),
 
-                # thresholding
                 "tau_blackhat": ("FLOAT", {"default": 4.0/255.0, "min": 0.0, "max": 0.5, "step": 0.0005,
                     "tooltip": "Base sensitivity (0–1). Lower = fix more, higher = fix less."}),
                 "auto_blackhat": ("BOOLEAN", {"default": True,
@@ -288,7 +274,6 @@ class BlackSpotCleaner:
                 "bh_k": ("FLOAT", {"default": 3.0, "min": 0.5, "max": 8.0, "step": 0.1,
                     "tooltip": "Auto strength multiplier. Higher = more aggressive fixes."}),
 
-                # guards
                 "temporal_gate": ("BOOLEAN", {"default": True,
                     "tooltip": "Only fix if darker than neighboring frames (reduces false positives)."}),
                 "temporal_radius": ("INT", {"default": 1, "min": 1, "max": 3,
@@ -298,7 +283,6 @@ class BlackSpotCleaner:
                 "tau_grad_edge": ("FLOAT", {"default": 0.07, "min": 0.0, "max": 1.0, "step": 0.001,
                     "tooltip": "Edge strength where fixes are skipped (higher = skip more)."}),
 
-                # mask shaping & perf
                 "dilate": ("INT", {"default": 1, "min": 0, "max": 8, "tooltip": "Expand the fix mask (pixels)."}),
                 "feather_sigma": ("FLOAT", {"default": 1.5, "min": 0.0, "max": 16.0, "step": 0.5,
                     "tooltip": "Soften mask edges (pixels)."}),
@@ -355,7 +339,6 @@ class BlackSpotCleaner:
         x = frames if isinstance(frames, torch.Tensor) else torch.tensor(frames)
         B,H,W,C = x.shape
 
-        # optional floor
         ref = None
         if str(ref_source) == "external" and reference is not None:
             ref = reference if isinstance(reference, torch.Tensor) else torch.tensor(reference)
@@ -378,31 +361,24 @@ class BlackSpotCleaner:
             y_ref = _luma(rr).to(device=y.device, dtype=y.dtype)  # match y
             assert y_ref.shape[0] == y.shape[0], f"y_ref B={y_ref.shape[0]} vs y B={y.shape[0]}"
             assert y_ref.shape[1:3] == y.shape[1:3], f"spatial mismatch {y_ref.shape[1:3]} vs {y.shape[1:3]}"
-            # then:
             floor = (y_ref - y) > float(tau_down)
 
-        # --- detector score ---
         r = int(radius)
         if detector == "blackhat":
-            # odd, bounded kernel
             k = max(1, 2*r + 1)
             k = min(k, 2*min(H,W) - 1)
-            # grayscale closing (dilate then erode via pool) → black-hat
             t = y.permute(0,3,1,2)
             d = F.max_pool2d(F.pad(t, (k//2,k//2,k//2,k//2), mode="replicate"), kernel_size=k, stride=1)
             e = -F.max_pool2d(F.pad(-d,(k//2,k//2,k//2,k//2), mode="replicate"), kernel_size=k, stride=1)
             y_close = e.permute(0,2,3,1)
             score = (y_close - y).clamp_min(0)
         else:
-            # local floor residual: blurred baseline minus image (down-only)
             sigma = max(0.5, r / 2.0)
             Bsm   = _blur_nhwc(y.to("cpu"), sigma).to(y.device)
             score = (Bsm - y).clamp_min(0)
-
-        # --- adaptive threshold (optional) ---
         tau = float(tau_blackhat)
         if bool(auto_blackhat):
-            region = (g < float(tau_grad_edge)).to(torch.float32)  # low-gradient only
+            region = (g < float(tau_grad_edge)).to(torch.float32)
             if region.sum() < 1:
                 region = torch.ones_like(region)
             sel = score[region > 0.5].view(-1)
@@ -413,19 +389,17 @@ class BlackSpotCleaner:
 
         mask = (score > tau).to(torch.float32)
 
-        # optional “darker than floor” condition
         if rr is not None:
             floor = (y_ref - y) > float(tau_down)
             mask = torch.maximum(mask, floor.to(torch.float32))
 
-        # temporal & edge guards
         if temporal_gate and B > 1:
             idxs = []
             for dt in range(1, int(temporal_radius)+1):
                 if dt < B:
                     idxs += [torch.clamp(torch.arange(B)-dt, 0, B-1),
                              torch.clamp(torch.arange(B)+dt, 0, B-1)]
-            neigh = torch.stack([y[i] for i in torch.stack(idxs, dim=0)], dim=0)  # T,B,H,W,1
+            neigh = torch.stack([y[i] for i in torch.stack(idxs, dim=0)], dim=0)
             y_med = torch.median(neigh, dim=0).values
             mask  = mask * ((y_med - y) > tau).to(torch.float32)
 
@@ -433,12 +407,10 @@ class BlackSpotCleaner:
             guard = (g < float(tau_grad_edge)).to(torch.float32)
             mask  = mask * guard
 
-        # shape & feather
         mask = _dilate(mask, int(dilate))
         if feather_sigma > 0:
             mask = _blur_nhwc(mask.to("cpu"), float(feather_sigma)).to(dev).clamp_(0.0,1.0)
 
-        # lift luma only by adding Δ equally to RGB
         delta   = score * mask
         delta3  = delta.repeat(1,1,1,3)
         out_lin = (xx.to(dev) + delta3).clamp(0.0, 1.0)

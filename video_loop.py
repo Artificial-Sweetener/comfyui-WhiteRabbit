@@ -157,7 +157,6 @@ class AutocropToLoop:
         "More from me!: https://artificialsweetener.ai"
     )
 
-    # --------------- UI ---------------
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -248,7 +247,6 @@ class AutocropToLoop:
     FUNCTION = "find_and_crop"
     CATEGORY = "video utils"
 
-    # --------------- helpers ---------------
     _gw_cache = {}  # gaussian window cache
 
     def _to_nchw(self, x):
@@ -280,7 +278,6 @@ class AutocropToLoop:
         return F.interpolate(x, size=(newH, newW), mode="area", align_corners=None)
 
     def _dist(self, A, B, kind="L1"):
-        # batched per-sample mean
         if kind == "MSE":
             return ((A - B) ** 2).mean(dim=(1, 2, 3))
         return (A - B).abs().mean(dim=(1, 2, 3))
@@ -291,7 +288,6 @@ class AutocropToLoop:
         R = x_nchw[:, 0:1]; G = x_nchw[:, 1:2]; B = x_nchw[:, 2:3]
         return 0.2126 * R + 0.7152 * G + 0.0722 * B
 
-    # ---- SSIM (pure torch, batched) ----
     def _gaussian_window(self, C, k=7, sigma=1.5, device="cpu", dtype=None):
         import torch
         key = (int(C), int(k), float(sigma), str(device), str(dtype))
@@ -329,7 +325,6 @@ class AutocropToLoop:
             vecs.append(self._ssim_pair_batched(xs, ys))
         return sum(vecs) / float(len(vecs))  # (N,)
 
-    # -------- precompute adjacent metrics (vectorized) --------
     def _precompute_adjacent_metrics(self, clip_nhwc_dev, kind, use_ssim, ds_scales, use_exp, use_flow):
         """
         Returns dict with vectors of length (B-1):
@@ -350,23 +345,19 @@ class AutocropToLoop:
         x_nchw = self._to_nchw(clip_nhwc_dev)   # B,C,H,W (device)
         X = x_nchw[:-1]; Y = x_nchw[1:]         # N,C,H,W
 
-        # Step-size distances
         result["D_adj"] = self._dist(X, Y, kind=kind)  # (N,)
 
-        # SSIM per adjacent pair
         if use_ssim:
             result["S_adj"] = self._ssim_multiscale_batched(X, Y, ds_scales)  # (N,)
         else:
             result["S_adj"] = torch.empty(0, device=x_nchw.device)
 
-        # Exposure (luma) steps
         if use_exp:
             Y_luma = self._luma(x_nchw).mean(dim=(1, 2, 3))  # (B,)
             result["E_adj"] = (Y_luma[:-1] - Y_luma[1:]).abs()  # (N,)
         else:
             result["E_adj"] = torch.empty(0, device=x_nchw.device)
 
-        # Flow magnitudes (adjacent) – OpenCV on CPU (heavy), compute once
         if use_flow:
             F_adj = []
             for i in range(N):
@@ -381,7 +372,6 @@ class AutocropToLoop:
 
         return result, x_nchw
 
-    # -------- precompute seam-to-first tables --------
     def _precompute_seam_tables(self, x_nchw_dev, W, kind, use_ssim, ds_scales):
         """
         For k = 0..W-1, precompute per-frame metrics vs first+k:
@@ -395,14 +385,14 @@ class AutocropToLoop:
         W = max(1, min(int(W), B - 1))
         D_to_firstk, S_to_firstk, E_to_firstk = [], [], []
 
-        Y = self._luma(x_nchw_dev).mean(dim=(1, 2, 3))  # (B,)
+        Y = self._luma(x_nchw_dev).mean(dim=(1, 2, 3))
 
         for k in range(W):
             Bk = x_nchw_dev[k:k+1].expand_as(x_nchw_dev)
-            Dk = self._dist(x_nchw_dev, Bk, kind=kind)       # (B,)
+            Dk = self._dist(x_nchw_dev, Bk, kind=kind)
             D_to_firstk.append(Dk)
             if use_ssim:
-                Sk = self._ssim_multiscale_batched(x_nchw_dev, Bk, ds_scales)  # (B,)
+                Sk = self._ssim_multiscale_batched(x_nchw_dev, Bk, ds_scales)
                 S_to_firstk.append(Sk)
             else:
                 S_to_firstk.append(torch.empty(0, device=x_nchw_dev.device))
@@ -411,7 +401,6 @@ class AutocropToLoop:
 
         return D_to_firstk, S_to_firstk, E_to_firstk
 
-    # ---- robust flow helper (grayscale-safe) ----
     def _flow_mag_mean(self, a_nhwc, b_nhwc, max_side=256):
         """
         Mean optical-flow magnitude. Accepts NHWC with/without batch,
@@ -459,7 +448,6 @@ class AutocropToLoop:
         except Exception:
             return 0.0
 
-    # --------------- main ---------------
     def find_and_crop(self,
                       clip_frames,
                       max_end_crop_frames,
@@ -485,7 +473,6 @@ class AutocropToLoop:
         import torch
         from comfy.utils import ProgressBar
 
-        # Outputs use original float frames
         clip_out = clip_frames
         clip_eval = (clip_frames * 255.0).round().clamp(0, 255) / 255.0 if score_in_8bit else clip_frames
 
@@ -494,7 +481,6 @@ class AutocropToLoop:
             header = "end_crop,score,D_seam,D_target,S_seam,S_target,E_seam,E_target,F_seam,F_target"
             return (clip_out, 0, B, 0.0, header)
 
-        # Device/AMP setup
         dev = "cuda" if accelerate_with_gpu and torch.cuda.is_available() else "cpu"
         amp_ctx = torch.cuda.amp.autocast if (dev == "cuda" and use_mixed_precision) else contextlib.nullcontext
 
@@ -505,9 +491,9 @@ class AutocropToLoop:
 
         with torch.no_grad():
             with amp_ctx():
-                # Move eval tensor to device once
+
                 clip_eval_dev = clip_eval.to(dev, non_blocking=True)
-                # -------- PRECOMPUTE (adjacent + seam) ONCE --------
+
                 pre, x_nchw_dev = self._precompute_adjacent_metrics(
                     clip_nhwc_dev=clip_eval_dev, kind=kind,
                     use_ssim=use_ssim_similarity, ds_scales=ds_scales,
@@ -520,16 +506,13 @@ class AutocropToLoop:
                     use_ssim=use_ssim_similarity, ds_scales=ds_scales
                 )
 
-                # Per-frame luma (device) for exposure
-                Y = self._luma(x_nchw_dev).mean(dim=(1, 2, 3))  # (B,)
+                Y = self._luma(x_nchw_dev).mean(dim=(1, 2, 3))
 
-        # Candidate loop: light math + indexing; keep on CPU floats for cheap Python ops
         best_extra = 0
         best_score = float("inf")
         rows = []
         pbar = ProgressBar(total_candidates)
 
-        # We will pull small scalars when needed; big vectors stay on device.
         for extra in range(0, total_candidates):
             keep = B - extra
             if keep < 2:
@@ -539,7 +522,6 @@ class AutocropToLoop:
             last_idx = keep - 1
             W_eff = max(1, min(W, last_idx + 1, B - 1))
 
-            # ----- Targets (use device tensors; convert to float once) -----
             chosen_D = []
             if include_first_step and keep >= 2: chosen_D.append(D_adj[0])
             if include_last_step  and keep >= 2: chosen_D.append(D_adj[last_idx - 1])
@@ -574,33 +556,26 @@ class AutocropToLoop:
             else:
                 F_target = 0.0
 
-            # ----- Seam measurements via precomputed tables -----
-            # For r=0..W_eff-1, pair is (idx = last_idx - (W_eff-1-r), first+k with k=r)
             idxs = [last_idx - (W_eff - 1 - r) for r in range(W_eff)]
             idxs_t = torch.tensor(idxs, device=x_nchw_dev.device, dtype=torch.long)
 
-            # Step seam mean
             D_vals = torch.stack([D_seam_tab[r].index_select(0, idxs_t[r:r+1]).squeeze(0) for r in range(W_eff)])
             D_seam = float(D_vals.mean().item())
 
-            # SSIM seam mean
             if use_ssim_similarity and S_seam_tab[0].numel() > 0:
                 S_vals = torch.stack([S_seam_tab[r].index_select(0, idxs_t[r:r+1]).squeeze(0) for r in range(W_eff)])
                 S_seam = float(S_vals.mean().item())
             else:
                 S_seam = 0.0
 
-            # Exposure seam mean
             if use_exposure_guard:
                 E_vals = torch.stack([E_seam_tab[r].index_select(0, idxs_t[r:r+1]).squeeze(0) for r in range(W_eff)])
                 E_seam = float(E_vals.mean().item())
             else:
                 E_seam = 0.0
 
-            # Cross-seam flow intentionally skipped (expensive); keep 0.0
             F_seam = 0.0
 
-            # ----- Normalized costs & score -----
             eps = 1e-12
             cost_step = abs(D_seam - D_target) / (D_target + eps)
             cost_sim  = abs(S_seam - S_target) / (abs(S_target) + eps) if use_ssim_similarity else 0.0
@@ -672,13 +647,12 @@ class TrimBatchEnds:
         s = max(0, int(trim_start_frames))
         e = max(0, int(trim_end_frames))
 
-        # Clamp so at least one frame remains
         if s + e >= B:
             s = min(s, B - 1)
             e = max(0, B - s - 1)
 
         out = clip_frames[s: B - e] if e > 0 else clip_frames[s:]
-        if out.shape[0] == 0:  # hard guard
+        if out.shape[0] == 0:
             out = clip_frames[B-1:B]
         return (out,)
 

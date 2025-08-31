@@ -8,6 +8,7 @@ from .interpolation import (
     RIFE_VFI_Opt,
 )
 from .noise_control import PixelHold
+from .post_process import BatchWatermarkSingle
 from .scaling import BatchResizeWithLanczos, UpscaleWithModelAdvanced
 from .video_loop import (
     AssembleLoopFrames,
@@ -35,6 +36,8 @@ NODE_CLASS_MAPPINGS = {
 
     "UpscaleWithModelAdvanced": UpscaleWithModelAdvanced,
     "BatchResizeWithLanczos": BatchResizeWithLanczos,
+
+    "BatchWatermarkSingle": BatchWatermarkSingle,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -54,6 +57,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 
     "UpscaleWithModelAdvanced": "🐇 Upscale w/ Model (Advanced)",
     "BatchResizeWithLanczos": "🐇 Batch Resize w/ Lanczos",
+
+    "BatchWatermarkSingle": "🐇 Watermark",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

@@ -48,7 +48,6 @@ from vfi_utils import (
 
 @lru_cache(maxsize=4)
 def _get_rife_model(ckpt_name: str):
-    # Local imports so this works regardless of top-level import order
     import torch
     from comfy.model_management import get_torch_device
     from rife import CKPT_NAME_VER_DICT, MODEL_TYPE
@@ -83,8 +82,6 @@ def _count_synth(frames: torch.Tensor, multiplier: int) -> int:
     return max(0, N - 1) * m
 
 def _make_rife_callback():
-    # Returns a callback with the signature expected by generic_frame_loop:
-    # (frame_0, frame_1, timestep, model, scale_list, ensemble, t_mapper)
     def _cb(frame_0, frame_1, timestep, model, scale_list, ensemble, t_mapper):
         if torch.is_tensor(timestep):
             t_scalar = float(timestep.reshape(-1)[0].item())
@@ -114,8 +111,6 @@ class RIFE_VFI_Opt:
         "Please visit the repo for full-stack credits and updates: https://github.com/Fannovel16/ComfyUI-Frame-Interpolation\n\n"
         "More from me!: https://artificialsweetener.ai"
     )
-
-    @classmethod
 
     @classmethod
     def INPUT_TYPES(s):
@@ -170,26 +165,20 @@ class RIFE_VFI_Opt:
         optional_interpolation_states: InterpolationStateList = None,
         **kwargs
     ):
-        # Reuse cached model (channels_last, on the right device)
         model = _get_rife_model(ckpt_name)
 
-        # Prep frames once
         frames = _prep_frames(frames)
 
-        # Multiplier handling (1 = passthrough for “interpolate by multiple”)
         m_effective = int(multiplier)
         if m_effective <= 1:
             return (postprocess_frames(frames),)
 
-
-        # Shared scale, progress, and callback
         scale_list = _scale_list(scale_factor)
         total_synth = _count_synth(frames, m_effective)
         pbar = _progress(total_synth)
         cb = _make_rife_callback()
         cbp = _with_progress(cb, pbar)
 
-        # generic_frame_loop expects: callback + args
         args = [model, scale_list, ensemble, None]  # t_mapper=None → identity
 
         with torch.inference_mode():
@@ -281,7 +270,6 @@ class RIFE_VFI_Advanced:
     FUNCTION = "vfi_advanced"
     CATEGORY = "video utils"
 
-    # ---------- helpers ----------
     def _map_t(self, t_scalar, t_mode, t_gamma, t_min, t_max, custom_sorted, m_effective):
         t = max(0.0, min(1.0, float(t_scalar)))
         if t_mode == "custom_list" and custom_sorted:
@@ -297,9 +285,6 @@ class RIFE_VFI_Advanced:
             g = max(1e-6, t_gamma)
             if t < 0.5: t = 0.5 * (2.0 * t) ** g
             else:       t = 1.0 - 0.5 * (2.0 * (1.0 - t)) ** g
-        # linear / bounded_linear fall through
-
-        # bounds applied last
         return max(0.0, min(1.0, t_min + (t_max - t_min) * t))
 
     def vfi_advanced(
@@ -324,29 +309,24 @@ class RIFE_VFI_Advanced:
 
         frames = _prep_frames(frames)
 
-        # custom list parsing
         custom_sorted = None
         if custom_t_list_csv and t_mode == "custom_list":
             toks = [x for x in re.split(r"[,\s]+", custom_t_list_csv.strip()) if x]
             custom_sorted = sorted([max(0.0, min(1.0, float(x))) for x in toks])
 
-        # Multiplier handling
         m_effective = int(multiplier)
         if m_effective <= 0:
             return (postprocess_frames(frames),)
 
-        # Build t_mapper once
         def _adv_t_mapper(t_scalar: float) -> float:
             return self._map_t(t_scalar, t_mode, t_gamma, t_min, t_max, custom_sorted, m_effective)
 
-        # Shared scale, progress, and callback
         scale_list = _scale_list(scale_factor)
         total_synth = _count_synth(frames, m_effective)
         pbar = _progress(total_synth)
         cb = _make_rife_callback()
         cbp = _with_progress(cb, pbar)
 
-        # generic_frame_loop expects: callback + args
         args = [model, scale_list, ensemble, _adv_t_mapper]
 
         with torch.inference_mode():
@@ -394,7 +374,6 @@ class RIFE_FPS_Resample:
                     {"default": 60.0, "min": 1e-6, "max": 2000.0, "step": 0.01, "tooltip": "The frame rate you want."}
                 ),
 
-                # Synthesis settings
                 "scale_factor": (
                     [0.25, 0.5, 1.0, 2.0, 4.0],
                     {"default": 1.0, "tooltip": "Quality/speed trade-off. 1.0 recommended. Lower = faster/softer; higher = sharper/slower."}
@@ -404,7 +383,6 @@ class RIFE_FPS_Resample:
                     {"default": True, "tooltip": "Blend forward & backward predictions to reduce artifacts (slower)."}
                 ),
 
-                # Stabilization
                 "linearize": ("BOOLEAN", {"default": False, "tooltip": "Process in linear color for more accurate brightness handling (slower)."}),
                 "lf_guardrail": ("BOOLEAN", {"default": False, "tooltip": "Keep the overall brightness/gradients close to the originals to reduce flicker."}),
                 "lf_sigma": ("FLOAT", {"default": 13.0, "min": 0.0, "max": 64.0, "step": 0.5, "tooltip": "How strong the low-frequency smoothing is. Higher = smoother changes."}),
@@ -417,7 +395,6 @@ class RIFE_FPS_Resample:
                 "band_radius": ("INT", {"default": 4, "min": 0, "max": 64, "tooltip": "Edge protection width in pixels."}),
                 "band_soft_sigma": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 16.0, "step": 0.5, "tooltip": "Feather the edge mask. Higher = softer."}),
 
-                # Performance
                 "clear_cache_after_n_frames": ("INT", {"default": 10, "min": 1, "max": 1000, "tooltip": "Advanced: free GPU memory every N output frames. 0 = never."}),
             }
         }
@@ -580,7 +557,6 @@ class RIFE_FPS_Resample:
         to_srgb = self._linear_to_srgb if linearize else (lambda z: z)
         blur = self._gaussian_blur_nhwc
 
-        # Preallocate exact output buffer on CPU
         y0 = x_nhwc[0:1]
         H, W, C = int(y0.shape[1]), int(y0.shape[2]), int(y0.shape[3])
         y_buf = torch.empty((n_out, H, W, C), dtype=torch.float32, device='cpu')
@@ -797,19 +773,15 @@ class RIFE_SeamTimingAnalyzer:
             ds.append(self._dist(clip_nchw[i:i+1], clip_nchw[i+1:i+2], kind))
         return ds  # list of scalar tensors
 
-    # --- main ---
-
     def analyze_wrapper(self, **kwargs):
         """
         Safe entrypoint for Comfy mapping:
         - If 'multiplier' is omitted: default to 0 (passthrough).
         - If 'multiplier' is invalid/negative: normalize to 0 (passthrough).
         """
-        # Supply default only if missing
         if "multiplier" not in kwargs:
             kwargs["multiplier"] = 0
 
-        # Normalize invalid / negative to 0
         try:
             m = int(kwargs["multiplier"])
         except (TypeError, ValueError):
@@ -844,8 +816,7 @@ class RIFE_SeamTimingAnalyzer:
         if m == 0:
             return ("", 0)
 
-        # --- prep clip (CPU NHWC -> NCHW CPU for deltas) ---
-        clip_nhwc = preprocess_frames(full_clip)  # NHWC float32 on CPU
+        clip_nhwc = preprocess_frames(full_clip)
         if clip_nhwc.device.type == "cpu" and torch.cuda.is_available():
             clip_nhwc = clip_nhwc.pin_memory()
 
@@ -854,10 +825,9 @@ class RIFE_SeamTimingAnalyzer:
             raise ValueError("full_clip must contain at least 2 frames.")
 
         metric = "L1" if calibrate_metric == "L1" else "MSE"
-        clip_nchw_cpu = self._to_nchw(clip_nhwc)  # keep on CPU for delta calc
-        deltas = self._adjacent_deltas(clip_nchw_cpu, metric)  # list of CPU scalars
+        clip_nchw_cpu = self._to_nchw(clip_nhwc)
+        deltas = self._adjacent_deltas(clip_nchw_cpu, metric)
 
-        # pick real-frame targets
         chosen = []
         if use_first_two:
             chosen.append(deltas[0])
@@ -871,22 +841,17 @@ class RIFE_SeamTimingAnalyzer:
         if not chosen:
             raise ValueError("Enable at least one of: use_first_two, use_last_two, use_global_median.")
 
-        # robust target = median of selected measures -> convert to Python float
         d_target = (chosen[0] if len(chosen) == 1 else torch.stack(chosen).median()).item()
         iters = int(calibrate_iters)
         m = int(m)
 
-        # --- prepare RIFE model (CUDA/CPU) and move seam to same device/dtype ---
         model = _get_rife_model(ckpt_name)
         device = next(model.parameters()).device
         dtype  = next(model.parameters()).dtype  # usually float32
 
-        # seam pair is [last, first] from the same batch
         last_nchw  = self._to_nchw(clip_nhwc[N-1:N]).to(device=device, dtype=dtype, non_blocking=True, memory_format=torch.channels_last)
         first_nchw = self._to_nchw(clip_nhwc[0:1]).to(device=device, dtype=dtype, non_blocking=True, memory_format=torch.channels_last)
 
-
-        # bounds
         t_min = float(max(0.0, min(1.0, t_min)))
         t_max = float(max(0.0, min(1.0, t_max)))
         if not (0.0 <= t_min < t_max <= 1.0):
@@ -899,12 +864,11 @@ class RIFE_SeamTimingAnalyzer:
             t_scalar = float(max(t_min, min(t_max, t_scalar)))
             return model(last_nchw, first_nchw, t_scalar, scale_list, False, ensemble)
 
-        # --- 1) solve t_last so dist(synth(t_last), first) ~= d_target ---
         lo, hi = t_min, t_max
         with torch.inference_mode():
             for _ in range(iters):
                 mid = 0.5 * (lo + hi)
-                d_mid = float(self._dist(synth_at(mid), first_nchw, metric).item())  # float for the comparison
+                d_mid = float(self._dist(synth_at(mid), first_nchw, metric).item())
                 if d_mid > d_target:
                     lo = mid
                 else:
@@ -912,7 +876,6 @@ class RIFE_SeamTimingAnalyzer:
             t_last = 0.5 * (lo + hi)
             f_prev = synth_at(t_last)
 
-            # --- 2) walk backward for (m-1) earlier t's with similar visual step ---
             ts = [t_last]
             for _ in range(m - 1):
                 lo, hi = t_min, ts[-1]
@@ -927,6 +890,6 @@ class RIFE_SeamTimingAnalyzer:
                 ts.append(tk)
                 f_prev = synth_at(tk)
 
-        ts_sorted = sorted(ts)  # rank order k=1..m
+        ts_sorted = sorted(ts)
         csv = ", ".join(f"{t:.6f}" for t in ts_sorted)
         return (csv, m)
