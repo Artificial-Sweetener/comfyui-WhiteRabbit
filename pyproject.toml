@@ -1,6 +1,6 @@
 [project]
 name = "whiterabbit"
-description = "A nodepack designed to help you work with video from within ComfyUI."
+description = "A nodepack designed to help you work with video from within ComfyUI that specializes in handling image batches efficiency and creating video loops."
 version = "1.0.0"
 license = {file = "LICENSE"} 
 classifiers = [
