@@ -22,8 +22,6 @@ Controls
 - tile_size: choose a starting tile; original node defaults to 512. 0 = auto (falls back 512 → 256 → 128 on OOM).
 - channels_last: try ON for a speedup on some systems.
 - precision: lower (fp16/bf16) can be faster; may impact quality depending on the model.
-
-More from me!: https://artificialsweetener.ai
 """
 
     @classmethod

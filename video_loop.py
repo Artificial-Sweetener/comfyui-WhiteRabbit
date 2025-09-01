@@ -6,8 +6,7 @@ import torch
 
 class PrepareLoopFrames:
     DESCRIPTION = (
-        "Prepares the wrap seam: builds a tiny 2-frame batch [last, first] for your interpolator and also passes the original clip through unchanged.\n\n"
-        "More from me!: https://artificialsweetener.ai"
+        "Prepares the wrap seam: builds a tiny 2-frame batch [last, first] for your interpolator and also passes the original clip through unchanged."
     )
 
     @classmethod
@@ -37,8 +36,7 @@ class PrepareLoopFrames:
 
 class AssembleLoopFrames:
     DESCRIPTION = (
-        "Builds the final loop: appends only the new in-between seam frames to your original clip—no duplicate of frame 1.\n\n"
-        "More from me!: https://artificialsweetener.ai"
+        "Builds the final loop: appends only the new in-between seam frames to your original clip—no duplicate of frame 1."
     )
 
     @classmethod
@@ -72,8 +70,7 @@ class AssembleLoopFrames:
 
 class RollFrames:
     DESCRIPTION = (
-        "Rolls the clip in a loop by an integer amount (cyclic shift). Also returns the same offset so you can undo it later.\n\n"
-        "More from me!: https://artificialsweetener.ai"
+        "Rolls the clip in a loop by an integer amount (cyclic shift). Also returns the same offset so you can undo it later."
     )
 
     @classmethod
@@ -112,8 +109,7 @@ class RollFrames:
 
 class UnrollFrames:
     DESCRIPTION = (
-        "Undo a previous roll after interpolation by accounting for the inserted frames (rotate by base_offset × (m+1)).\n\n"
-        "More from me!: https://artificialsweetener.ai"
+        "Undo a previous roll after interpolation by accounting for the inserted frames (rotate by base_offset × (m+1))."
     )
 
     @classmethod
@@ -177,8 +173,7 @@ class AutocropToLoop:
     """
 
     DESCRIPTION = (
-        "Auto-crops the clip to create a smoother loop: tests crops from the end and scores the seam so it feels like a normal step.\n\n"
-        "More from me!: https://artificialsweetener.ai"
+        "Auto-crops the clip to create a smoother loop: tests crops from the end and scores the seam so it feels like a normal step."
     )
 
     @classmethod
@@ -812,8 +807,7 @@ class TrimBatchEnds:
     """
 
     DESCRIPTION = (
-        "Quickly remove frames from the start and/or end of a clip. Always keeps at least one frame.\n\n"
-        "More from me!: https://artificialsweetener.ai"
+        "Quickly remove frames from the start and/or end of a clip. Always keeps at least one frame."
     )
 
     @classmethod

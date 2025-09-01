@@ -298,8 +298,7 @@ class PixelHold:
     CATEGORY = "video utils"
     DESCRIPTION = (
         "Locks parts of each frame to a chosen reference (external image or a frame from the clip) whenever changes are small—"
-        "useful for stabilizing flat areas or backgrounds while leaving motion to pass through.\n\n"
-        "More from me!: https://artificialsweetener.ai"
+        "useful for stabilizing flat areas or backgrounds while leaving motion to pass through."
     )
 
     @torch.no_grad()
@@ -614,8 +613,7 @@ class BlackSpotCleaner:
     FUNCTION = "clean"
     CATEGORY = "video utils"
     DESCRIPTION = (
-        "Removes tiny dark specks and soft blotches by gently lifting only the dark outliers—keeps edges and details safe with guards.\n\n"
-        "More from me!: https://artificialsweetener.ai"
+        "Removes tiny dark specks and soft blotches by gently lifting only the dark outliers—keeps edges and details safe with guards."
     )
 
     @torch.no_grad()
