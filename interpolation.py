@@ -127,11 +127,7 @@ def _with_progress(cb, pbar):
 class RIFE_VFI_Opt:
     DESCRIPTION = (
         "Interpolate a clip by a chosen multiple using RIFE 4.7/4.9 — inserts evenly spaced in-between frames "
-        "between every pair (e.g., ×2 adds 1 frame per pair).\n\n"
-        "• Built on the ComfyUI-Frame-Interpolation base pack (models & utilities).\n"
-        "• Credits: based on and requires Fannovel16’s ComfyUI-Frame-Interpolation (and its contributors). "
-        "Please visit the repo for full-stack credits and updates: https://github.com/Fannovel16/ComfyUI-Frame-Interpolation\n\n"
-        "More from me!: https://artificialsweetener.ai"
+        "between every pair (e.g., ×2 adds 1 frame per pair)."
     )
 
     @classmethod
@@ -245,11 +241,7 @@ class RIFE_VFI_Advanced:
 
     DESCRIPTION = (
         "Custom timing for RIFE 4.7/4.9 — still “interpolate by multiple,” but you control where the in-betweens land "
-        "(ease in/out, clamps, or your own t-list).\n\n"
-        "• Built on the ComfyUI-Frame-Interpolation base pack (models & utilities).\n"
-        "• Credits: based on and requires Fannovel16’s ComfyUI-Frame-Interpolation (and its contributors). "
-        "Please visit the repo for full-stack credits and updates: https://github.com/Fannovel16/ComfyUI-Frame-Interpolation\n\n"
-        "More from me!: https://artificialsweetener.ai"
+        "(ease in/out, clamps, or your own t-list)."
     )
 
     @classmethod
@@ -448,11 +440,7 @@ class RIFE_VFI_Advanced:
 class RIFE_FPS_Resample:
     DESCRIPTION = (
         "Convert a clip from one FPS to another using RIFE 4.7/4.9. Non-integer changes synthesize in-betweens; "
-        "exact integer downscales just decimate. Includes optional stabilizers to reduce flicker and protect edges.\n\n"
-        "• Built on the ComfyUI-Frame-Interpolation base pack (models & utilities).\n"
-        "• Credits: based on and requires Fannovel16’s ComfyUI-Frame-Interpolation (and its contributors). "
-        "Please visit the repo for full-stack credits and updates: https://github.com/Fannovel16/ComfyUI-Frame-Interpolation\n\n"
-        "More from me!: https://artificialsweetener.ai"
+        "exact integer downscales just decimate. Includes optional stabilizers to reduce flicker and protect edges."
     )
 
     @classmethod
@@ -885,11 +873,7 @@ class RIFE_SeamTimingAnalyzer:
 
     DESCRIPTION = (
         "Finds a smooth loop timing: measures motion in your clip and solves a set of t-values across the wrap "
-        "[last→first] so the seam blends naturally.\n\n"
-        "• Built on the ComfyUI-Frame-Interpolation base pack (models & utilities).\n"
-        "• Credits: based on and requires Fannovel16’s ComfyUI-Frame-Interpolation (and its contributors). "
-        "Please visit the repo for full-stack credits and updates: https://github.com/Fannovel16/ComfyUI-Frame-Interpolation\n\n"
-        "More from me!: https://artificialsweetener.ai"
+        "[last→first] so the seam blends naturally."
     )
 
     @classmethod
