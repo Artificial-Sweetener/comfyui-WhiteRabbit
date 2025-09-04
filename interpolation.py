@@ -972,7 +972,26 @@ class RIFE_SeamTimingAnalyzer:
                         "tooltip": "Highest allowed t at the seam. Keep <1.0 to avoid hugging the first frame.",
                     },
                 ),
-            }
+            },
+            "optional": {
+                "auto_tmax": (
+                    "BOOLEAN",
+                    {
+                        "default": False,
+                        "tooltip": "If enabled, automatically raise the upper bracket near 1.0 so the solver can hit the target step size.",
+                    },
+                ),
+                "t_cap": (
+                    "FLOAT",
+                    {
+                        "default": 0.995,
+                        "min": 0.5,
+                        "max": 0.9999,
+                        "step": 0.0001,
+                        "tooltip": "Safety cap used when auto_tmax is enabled (keeps t shy of 1.0).",
+                    },
+                ),
+            },
         }
 
     RETURN_TYPES = ("STRING", "INT")
@@ -1031,6 +1050,8 @@ class RIFE_SeamTimingAnalyzer:
         calibrate_iters,
         t_min,
         t_max,
+        auto_tmax=False,
+        t_cap=0.995,
     ):
 
         try:
@@ -1099,6 +1120,11 @@ class RIFE_SeamTimingAnalyzer:
         if not (0.0 <= t_min < t_max <= 1.0):
             raise ValueError("Require 0 <= t_min < t_max <= 1.0")
 
+        hi_eff = t_max
+        if auto_tmax:
+            # Raise the upper bracket to a safe cap near 1.0 so we can hit the target step size.
+            hi_eff = max(hi_eff, min(max(t_min + 1e-6, float(t_cap)), 0.9999))
+
         scale_list = [
             8 / scale_factor,
             4 / scale_factor,
@@ -1108,10 +1134,11 @@ class RIFE_SeamTimingAnalyzer:
 
         @torch.no_grad()
         def synth_at(t_scalar: float):
-            t_scalar = float(max(t_min, min(t_max, t_scalar)))
+            t_scalar = float(max(t_min, min(hi_eff, t_scalar)))
             return model(last_nchw, first_nchw, t_scalar, scale_list, False, ensemble)
 
-        lo, hi = t_min, t_max
+
+        lo, hi = t_min, hi_eff
         with torch.inference_mode():
             for _ in range(iters):
                 mid = 0.5 * (lo + hi)
