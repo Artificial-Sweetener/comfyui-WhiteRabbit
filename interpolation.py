@@ -143,21 +143,21 @@ class RIFE_VFI_Opt:
                 ),
                 "frames": (
                     "IMAGE",
-                    {"tooltip": "Input clip: one image per frame (NHWC)."},
+                    {"tooltip": "Your input clip: one image per frame."},
                 ),
                 "multiplier": (
                     "INT",
                     {
                         "default": 2,
                         "min": 1,
-                        "tooltip": "How many frames to add between each pair. 2 → add 1, 4 → add 3.",
+                        "tooltip": "Adds extra frames to smooth motion: 2 adds 1 new frame per pair; 4 adds 3.",
                     },
                 ),
                 "scale_factor": (
                     [0.25, 0.5, 1.0, 2.0, 4.0],
                     {
                         "default": 1.0,
-                        "tooltip": "Quality/speed trade-off. 1.0 recommended. Lower = faster/softer; higher = sharper/slower.",
+                        "tooltip": "Quality vs speed. 1.0 recommended. Lower = faster/softer; higher = sharper/slower.",
                     },
                 ),
                 "ensemble": (
@@ -173,7 +173,7 @@ class RIFE_VFI_Opt:
                         "default": 10,
                         "min": 0,
                         "max": 1000,
-                        "tooltip": "Advanced: free GPU memory every N generated frames. 0 = never.",
+                        "tooltip": "Free up GPU memory every N generated frames (advanced). Set 0 to never.",
                     },
                 ),
             },
@@ -181,7 +181,7 @@ class RIFE_VFI_Opt:
                 "optional_interpolation_states": (
                     "INTERPOLATION_STATES",
                     {
-                        "tooltip": "Skip interpolation for specific frame pairs (e.g., scene cuts). Does not change timing."
+                        "tooltip": "Don’t create in-between frames for selected frame pairs (e.g., scene cuts). Timing stays the same."
                     },
                 ),
             },
@@ -257,14 +257,14 @@ class RIFE_VFI_Advanced:
                 ),
                 "frames": (
                     "IMAGE",
-                    {"tooltip": "Input clip: one image per frame (NHWC)."},
+                    {"tooltip": "Your input clip: one image per frame."},
                 ),
                 "multiplier": (
                     "INT",
                     {
                         "default": 2,
                         "min": 0,
-                        "tooltip": "Number of in-betweens per pair. 0 = passthrough (no synthesis).",
+                        "tooltip": "How many new frames to create between each pair. 0 = passthrough (no new frames).",
                     },
                 ),
                 "t_mode": (
@@ -278,7 +278,7 @@ class RIFE_VFI_Advanced:
                     ],
                     {
                         "default": "linear",
-                        "tooltip": "How to place the in-betweens over time: straight line, ease in/out, clamp range, or custom list.",
+                        "tooltip": "How to spread the new frames over time: straight line, ease in/out, limit the range, or provide your own list.",
                     },
                 ),
                 "t_gamma": (
@@ -288,7 +288,7 @@ class RIFE_VFI_Advanced:
                         "min": 0.05,
                         "max": 10.0,
                         "step": 0.05,
-                        "tooltip": "Strength of the ease curve for gamma modes.",
+                        "tooltip": "Easing strength for gamma modes. Higher = more easing.",
                     },
                 ),
                 "t_min": (
@@ -298,7 +298,7 @@ class RIFE_VFI_Advanced:
                         "min": 0.0,
                         "max": 1.0,
                         "step": 0.001,
-                        "tooltip": "Lower clamp for t (use with bounded_linear).",
+                        "tooltip": "Earliest allowed position between the two frames (0 = exactly the first frame). Use with bounded_linear.",
                     },
                 ),
                 "t_max": (
@@ -308,14 +308,14 @@ class RIFE_VFI_Advanced:
                         "min": 0.0,
                         "max": 1.0,
                         "step": 0.001,
-                        "tooltip": "Upper clamp for t (use with bounded_linear).",
+                        "tooltip": "Latest allowed position between the two frames (1 = exactly the next frame). Use with bounded_linear.",
                     },
                 ),
                 "scale_factor": (
                     [0.25, 0.5, 1.0, 2.0, 4.0],
                     {
                         "default": 1.0,
-                        "tooltip": "Quality/speed trade-off. 1.0 recommended. Lower = faster/softer; higher = sharper/slower.",
+                        "tooltip": "Quality vs speed. 1.0 recommended. Lower = faster/softer; higher = sharper/slower.",
                     },
                 ),
                 "ensemble": (
@@ -331,7 +331,7 @@ class RIFE_VFI_Advanced:
                         "default": 10,
                         "min": 0,
                         "max": 1000,
-                        "tooltip": "Advanced: free GPU memory every N generated frames. 0 = never.",
+                        "tooltip": "Free up GPU memory every N generated frames (advanced). Set 0 to never.",
                     },
                 ),
             },
@@ -340,13 +340,13 @@ class RIFE_VFI_Advanced:
                     "STRING",
                     {
                         "default": "",
-                        "tooltip": "Exact t values (0–1) separated by commas, e.g. 0.18,0.41,0.66. Overrides the schedule.",
+                        "tooltip": "Exact positions between the two frames (0–1), comma-separated, e.g. 0.18,0.41,0.66. Overrides the schedule.",
                     },
                 ),
                 "optional_interpolation_states": (
                     "INTERPOLATION_STATES",
                     {
-                        "tooltip": "Skip interpolation for specific frame pairs (e.g., scene cuts). Does not change timing."
+                        "tooltip": "Don’t create in-between frames for selected frame pairs (e.g., scene cuts). Timing stays the same."
                     },
                 ),
             },
@@ -456,7 +456,7 @@ class RIFE_FPS_Resample:
                 ),
                 "frames": (
                     "IMAGE",
-                    {"tooltip": "Input clip: one image per frame (NHWC)."},
+                    {"tooltip": "Your input clip: one image per frame."},
                 ),
                 "fps_in": (
                     "FLOAT",
@@ -465,7 +465,7 @@ class RIFE_FPS_Resample:
                         "min": 1e-6,
                         "max": 1000.0,
                         "step": 0.01,
-                        "tooltip": "The clip’s current frame rate.",
+                        "tooltip": "Current frame rate of your clip (frames per second).",
                     },
                 ),
                 "fps_out": (
@@ -475,14 +475,14 @@ class RIFE_FPS_Resample:
                         "min": 1e-6,
                         "max": 2000.0,
                         "step": 0.01,
-                        "tooltip": "The frame rate you want.",
+                        "tooltip": "Target frame rate you want (frames per second).",
                     },
                 ),
                 "scale_factor": (
                     [0.25, 0.5, 1.0, 2.0, 4.0],
                     {
                         "default": 1.0,
-                        "tooltip": "Quality/speed trade-off. 1.0 recommended. Lower = faster/softer; higher = sharper/slower.",
+                        "tooltip": "Quality vs speed. 1.0 recommended. Lower = faster/softer; higher = sharper/slower.",
                     },
                 ),
                 "ensemble": (
@@ -496,14 +496,14 @@ class RIFE_FPS_Resample:
                     "BOOLEAN",
                     {
                         "default": False,
-                        "tooltip": "Process in linear color for more accurate brightness handling (slower).",
+                        "tooltip": "Work in linear light for more accurate brightness and gradients (slower).",
                     },
                 ),
                 "lf_guardrail": (
                     "BOOLEAN",
                     {
                         "default": False,
-                        "tooltip": "Keep the overall brightness/gradients close to the originals to reduce flicker.",
+                        "tooltip": "Keep overall brightness and gradients close to the originals to reduce flicker.",
                     },
                 ),
                 "lf_sigma": (
@@ -520,7 +520,7 @@ class RIFE_FPS_Resample:
                     "BOOLEAN",
                     {
                         "default": False,
-                        "tooltip": "Match exposure/contrast to the source pair to reduce flicker.",
+                        "tooltip": "Match exposure and contrast to the source pair to reduce flicker.",
                     },
                 ),
                 "match_a_cap": (
@@ -530,7 +530,7 @@ class RIFE_FPS_Resample:
                         "min": 0.0,
                         "max": 0.2,
                         "step": 0.001,
-                        "tooltip": "Limit for exposure scale (a).",
+                        "tooltip": "Maximum change allowed for exposure scale.",
                     },
                 ),
                 "match_b_cap": (
@@ -540,14 +540,14 @@ class RIFE_FPS_Resample:
                         "min": 0.0,
                         "max": 0.1,
                         "step": 0.0005,
-                        "tooltip": "Limit for brightness offset (b).",
+                        "tooltip": "Maximum change allowed for brightness offset.",
                     },
                 ),
                 "edge_band_lock": (
                     "BOOLEAN",
                     {
                         "default": False,
-                        "tooltip": "Protect edges by blending from the nearest source frame in edge regions.",
+                        "tooltip": "Protect sharp edges: near edges, mix in more of the nearest real frame to avoid smearing.",
                     },
                 ),
                 "tau_low": (
@@ -557,7 +557,7 @@ class RIFE_FPS_Resample:
                         "min": 0.0,
                         "max": 0.25,
                         "step": 0.0005,
-                        "tooltip": "Edge detector: lower threshold (finds more edges if smaller).",
+                        "tooltip": "Edge sensitivity: lower threshold (smaller finds more edges).",
                     },
                 ),
                 "tau_high": (
@@ -567,7 +567,7 @@ class RIFE_FPS_Resample:
                         "min": 0.0,
                         "max": 0.5,
                         "step": 0.0005,
-                        "tooltip": "Edge detector: higher threshold (finds only strong edges if larger).",
+                        "tooltip": "Edge sensitivity: higher threshold (larger finds only strong edges).",
                     },
                 ),
                 "band_radius": (
@@ -576,7 +576,7 @@ class RIFE_FPS_Resample:
                         "default": 4,
                         "min": 0,
                         "max": 64,
-                        "tooltip": "Edge protection width in pixels.",
+                        "tooltip": "Width of the edge protection band (pixels).",
                     },
                 ),
                 "band_soft_sigma": (
@@ -586,7 +586,7 @@ class RIFE_FPS_Resample:
                         "min": 0.0,
                         "max": 16.0,
                         "step": 0.5,
-                        "tooltip": "Feather the edge mask. Higher = softer.",
+                        "tooltip": "Soften the edge band. Higher = smoother.",
                     },
                 ),
                 "clear_cache_after_n_frames": (
@@ -595,7 +595,7 @@ class RIFE_FPS_Resample:
                         "default": 10,
                         "min": 1,
                         "max": 1000,
-                        "tooltip": "Advanced: free GPU memory every N output frames. 0 = never.",
+                        "tooltip": "Free up GPU memory every N output frames (advanced). Set 0 to never.",
                     },
                 ),
             }
@@ -891,7 +891,7 @@ class RIFE_SeamTimingAnalyzer:
                     [0.25, 0.5, 1.0, 2.0, 4.0],
                     {
                         "default": 1.0,
-                        "tooltip": "Quality/speed trade-off for the probe renders. 1.0 recommended.",
+                        "tooltip": "Quality vs speed for the probe renders. 1.0 recommended.",
                     },
                 ),
                 "ensemble": (
@@ -904,7 +904,7 @@ class RIFE_SeamTimingAnalyzer:
                 "full_clip": (
                     "IMAGE",
                     {
-                        "tooltip": "Your input clip (≥2 frames). We measure real motion here to decide the seam timing."
+                        "tooltip": "Your input clip (≥2 frames). Real motion here decides the loop seam timing."
                     },
                 ),
                 "multiplier": (
@@ -912,28 +912,28 @@ class RIFE_SeamTimingAnalyzer:
                     {
                         "default": 4,
                         "min": 0,
-                        "tooltip": "How many in-betweens you plan at the seam [last→first]. Set 0 to skip solving.",
+                        "tooltip": "How many new frames you plan to create at the loop seam [last→first]. Set 0 to skip.",
                     },
                 ),
                 "use_first_two": (
                     "BOOLEAN",
                     {
                         "default": True,
-                        "tooltip": "Match the step size between the first two frames in your clip.",
+                        "tooltip": "Match the motion between the first two frames in your clip.",
                     },
                 ),
                 "use_last_two": (
                     "BOOLEAN",
                     {
                         "default": True,
-                        "tooltip": "Match the step size between the last two frames in your clip.",
+                        "tooltip": "Match the motion between the last two frames in your clip.",
                     },
                 ),
                 "use_global_median": (
                     "BOOLEAN",
                     {
                         "default": False,
-                        "tooltip": "Use the median step across the whole clip (needs ≥3 frames). Helps ignore outliers.",
+                        "tooltip": "Use the median motion across the whole clip (needs ≥3 frames). Helps ignore outliers.",
                     },
                 ),
                 "calibrate_metric": (
@@ -959,7 +959,7 @@ class RIFE_SeamTimingAnalyzer:
                         "min": 0.0,
                         "max": 1.0,
                         "step": 0.001,
-                        "tooltip": "Lowest allowed t at the seam.",
+                        "tooltip": "Earliest allowed blend point at the seam (0 = exactly the last frame).",
                     },
                 ),
                 "t_max": (
@@ -969,7 +969,7 @@ class RIFE_SeamTimingAnalyzer:
                         "min": 0.0,
                         "max": 1.0,
                         "step": 0.001,
-                        "tooltip": "Highest allowed t at the seam. Keep <1.0 to avoid hugging the first frame.",
+                        "tooltip": "Latest allowed blend point at the seam (keep below 1.0 to avoid sticking to the first frame).",
                     },
                 ),
             },
@@ -978,7 +978,7 @@ class RIFE_SeamTimingAnalyzer:
                     "BOOLEAN",
                     {
                         "default": False,
-                        "tooltip": "If enabled, automatically raise the upper bracket near 1.0 so the solver can hit the target step size.",
+                        "tooltip": "Automatically push the upper limit closer to the next frame to hit the target motion step.",
                     },
                 ),
                 "t_cap": (
@@ -988,7 +988,7 @@ class RIFE_SeamTimingAnalyzer:
                         "min": 0.5,
                         "max": 0.9999,
                         "step": 0.0001,
-                        "tooltip": "Safety cap used when auto_tmax is enabled (keeps t shy of 1.0).",
+                        "tooltip": "Safety cap used with the auto upper limit (keeps it just shy of 1.0).",
                     },
                 ),
             },
