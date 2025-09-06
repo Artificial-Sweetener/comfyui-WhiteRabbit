@@ -1,6 +1,6 @@
 [project]
 name = "whiterabbit"
-description = "A nodepack designed to help you work with video from within ComfyUI that specializes in handling image batches efficiency and creating video loops."
+description = "Powerful video frame manipulation nodes for ComfyUI such as: efficient high quality batch scaling, arbitrary framerate resampling, seamless video loop tools, batch watermark composite, and more."
 version = "1.1.0"
 license = {file = "LICENSE"}
 classifiers = [
