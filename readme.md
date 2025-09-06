@@ -1,4 +1,5 @@
 # WhiteRabbit: Master the Flow of Time 🐇
+**English** | [简体中文](README_zh-CN.md)
 
 This is **comfyui-WhiteRabbit**, a nodepack designed to help you work with video from within ComfyUI.
 
