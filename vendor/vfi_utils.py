@@ -22,7 +22,7 @@ BASE_MODEL_DOWNLOAD_URLS = [
 
 config_path = os.path.join(os.path.dirname(__file__), "./config.yaml")
 if os.path.exists(config_path):
-    config = yaml.load(open(config_path, "r"), Loader=yaml.FullLoader)
+    config = yaml.load(open(config_path, "r", encoding="utf-8"), Loader=yaml.FullLoader)
 else:
     raise Exception(
         "config.yaml file is neccessary, plz recreate the config file by downloading it from https://github.com/Fannovel16/ComfyUI-Frame-Interpolation"
