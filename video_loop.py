@@ -5,9 +5,7 @@ import torch
 
 
 class PrepareLoopFrames:
-    DESCRIPTION = (
-        "Prepares the wrap seam: builds a tiny 2-frame batch [last, first] for your interpolator and also passes the original clip through unchanged."
-    )
+    DESCRIPTION = "Prepares the wrap seam: builds a tiny 2-frame batch [last, first] for your interpolator and also passes the original clip through unchanged."
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -35,9 +33,7 @@ class PrepareLoopFrames:
 
 
 class AssembleLoopFrames:
-    DESCRIPTION = (
-        "Builds the final loop: appends only the new in-between seam frames to your original clip—no duplicate of frame 1."
-    )
+    DESCRIPTION = "Builds the final loop: appends only the new in-between seam frames to your original clip—no duplicate of frame 1."
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -69,9 +65,7 @@ class AssembleLoopFrames:
 
 
 class RollFrames:
-    DESCRIPTION = (
-        "Rolls the clip in a loop by an integer amount (cyclic shift). Also returns the same offset so you can undo it later."
-    )
+    DESCRIPTION = "Rolls the clip in a loop by an integer amount (cyclic shift). Also returns the same offset so you can undo it later."
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -108,9 +102,7 @@ class RollFrames:
 
 
 class UnrollFrames:
-    DESCRIPTION = (
-        "Undo a previous roll after interpolation by accounting for the inserted frames (rotate by base_offset × (m+1))."
-    )
+    DESCRIPTION = "Undo a previous roll after interpolation by accounting for the inserted frames (rotate by base_offset × (m+1))."
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -172,9 +164,7 @@ class AutocropToLoop:
     Progress bar: one tick per candidate crop (0..max_end_crop_frames).
     """
 
-    DESCRIPTION = (
-        "Auto-crops the clip to create a smoother loop: tests crops from the end and scores the seam so it feels like a normal step."
-    )
+    DESCRIPTION = "Auto-crops the clip to create a smoother loop: tests crops from the end and scores the seam so it feels like a normal step."
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -806,9 +796,7 @@ class TrimBatchEnds:
     Both trims are applied in one pass. Always leaves at least one frame.
     """
 
-    DESCRIPTION = (
-        "Quickly remove frames from the start and/or end of a clip. Always keeps at least one frame."
-    )
+    DESCRIPTION = "Quickly remove frames from the start and/or end of a clip. Always keeps at least one frame."
 
     @classmethod
     def INPUT_TYPES(cls):

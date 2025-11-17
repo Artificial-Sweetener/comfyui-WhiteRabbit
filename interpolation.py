@@ -1137,7 +1137,6 @@ class RIFE_SeamTimingAnalyzer:
             t_scalar = float(max(t_min, min(hi_eff, t_scalar)))
             return model(last_nchw, first_nchw, t_scalar, scale_list, False, ensemble)
 
-
         lo, hi = t_min, hi_eff
         with torch.inference_mode():
             for _ in range(iters):

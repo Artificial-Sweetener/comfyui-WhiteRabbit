@@ -612,9 +612,7 @@ class BlackSpotCleaner:
     RETURN_NAMES = ("images", "mask_preview")
     FUNCTION = "clean"
     CATEGORY = "video utils"
-    DESCRIPTION = (
-        "Removes tiny dark specks and soft blotches by gently lifting only the dark outliers—keeps edges and details safe with guards."
-    )
+    DESCRIPTION = "Removes tiny dark specks and soft blotches by gently lifting only the dark outliers—keeps edges and details safe with guards."
 
     @torch.no_grad()
     def clean(

@@ -325,9 +325,7 @@ class BatchWatermarkSingle:
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "apply"
     CATEGORY = "image/post"
-    DESCRIPTION = (
-        "GPU accelerated watermark overlay. TorchLanc resize for quality and speed. Works for single images, but efficient for batches, too!"
-    )
+    DESCRIPTION = "GPU accelerated watermark overlay. TorchLanc resize for quality and speed. Works for single images, but efficient for batches, too!"
 
     def apply(
         self,
