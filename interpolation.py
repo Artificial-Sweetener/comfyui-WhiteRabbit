@@ -74,7 +74,7 @@ def _get_rife_model(ckpt_name: str):
 
 
 # ---------- shared helpers (for all nodes) ----------
-def _scale_list(scale_factor: float):
+def _scale_list(scale_factor: float | str):
     s = float(scale_factor)
     return [8.0 / s, 4.0 / s, 2.0 / s, 1.0 / s]
 
@@ -123,6 +123,19 @@ def _with_progress(cb, pbar):
 
 # ----------------------------------------------------
 
+# Saved workflows and frontend submissions can carry COMBO values as float or str.
+SCALE_FACTOR_OPTIONS = [0.25, 0.5, 1.0, 2.0, 4.0]
+
+
+def _validate_scale_factor(scale_factor):
+    try:
+        sf = float(scale_factor)
+    except (TypeError, ValueError):
+        return f"scale_factor must be one of {SCALE_FACTOR_OPTIONS}"
+    if sf not in SCALE_FACTOR_OPTIONS:
+        return f"scale_factor must be one of {SCALE_FACTOR_OPTIONS}"
+    return True
+
 
 class RIFE_VFI_Opt:
     DESCRIPTION = (
@@ -154,7 +167,7 @@ class RIFE_VFI_Opt:
                     },
                 ),
                 "scale_factor": (
-                    [0.25, 0.5, 1.0, 2.0, 4.0],
+                    SCALE_FACTOR_OPTIONS,
                     {
                         "default": 1.0,
                         "tooltip": "Quality vs speed. 1.0 recommended. Lower = faster/softer; higher = sharper/slower.",
@@ -190,6 +203,10 @@ class RIFE_VFI_Opt:
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "vfi"
     CATEGORY = "video utils"
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, scale_factor):
+        return _validate_scale_factor(scale_factor)
 
     def vfi(
         self,
@@ -312,7 +329,7 @@ class RIFE_VFI_Advanced:
                     },
                 ),
                 "scale_factor": (
-                    [0.25, 0.5, 1.0, 2.0, 4.0],
+                    SCALE_FACTOR_OPTIONS,
                     {
                         "default": 1.0,
                         "tooltip": "Quality vs speed. 1.0 recommended. Lower = faster/softer; higher = sharper/slower.",
@@ -355,6 +372,10 @@ class RIFE_VFI_Advanced:
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "vfi_advanced"
     CATEGORY = "video utils"
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, scale_factor):
+        return _validate_scale_factor(scale_factor)
 
     def _map_t(
         self, t_scalar, t_mode, t_gamma, t_min, t_max, custom_sorted, m_effective
@@ -479,7 +500,7 @@ class RIFE_FPS_Resample:
                     },
                 ),
                 "scale_factor": (
-                    [0.25, 0.5, 1.0, 2.0, 4.0],
+                    SCALE_FACTOR_OPTIONS,
                     {
                         "default": 1.0,
                         "tooltip": "Quality vs speed. 1.0 recommended. Lower = faster/softer; higher = sharper/slower.",
@@ -604,6 +625,10 @@ class RIFE_FPS_Resample:
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "resample"
     CATEGORY = "video utils"
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, scale_factor):
+        return _validate_scale_factor(scale_factor)
 
     @staticmethod
     def _srgb_to_linear(x):
@@ -888,7 +913,7 @@ class RIFE_SeamTimingAnalyzer:
                     },
                 ),
                 "scale_factor": (
-                    [0.25, 0.5, 1.0, 2.0, 4.0],
+                    SCALE_FACTOR_OPTIONS,
                     {
                         "default": 1.0,
                         "tooltip": "Quality vs speed for the probe renders. 1.0 recommended.",
@@ -998,6 +1023,10 @@ class RIFE_SeamTimingAnalyzer:
     RETURN_NAMES = ("t_list_csv", "multiplier")
     FUNCTION = "analyze_wrapper"
     CATEGORY = "video utils"
+
+    @classmethod
+    def VALIDATE_INPUTS(cls, scale_factor):
+        return _validate_scale_factor(scale_factor)
 
     # --- helpers ---
     def _to_nchw(self, x):
@@ -1125,12 +1154,7 @@ class RIFE_SeamTimingAnalyzer:
             # Raise the upper bracket to a safe cap near 1.0 so we can hit the target step size.
             hi_eff = max(hi_eff, min(max(t_min + 1e-6, float(t_cap)), 0.9999))
 
-        scale_list = [
-            8 / scale_factor,
-            4 / scale_factor,
-            2 / scale_factor,
-            1 / scale_factor,
-        ]
+        scale_list = _scale_list(scale_factor)
 
         @torch.no_grad()
         def synth_at(t_scalar: float):
