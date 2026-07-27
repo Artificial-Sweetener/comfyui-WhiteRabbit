@@ -1,0 +1,108 @@
+name: release
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run semantic-release in dry-run mode without publishing"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout complete history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22.14.0
+          cache: npm
+
+      - name: Install release dependencies
+        run: npm ci
+
+      - name: Install ComfyUI host dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git "$RUNNER_TEMP/ComfyUI"
+          rsync -a --exclude=".git" "$RUNNER_TEMP/ComfyUI/" "$GITHUB_WORKSPACE/../.."/
+          pip install -r "$GITHUB_WORKSPACE/../../requirements.txt"
+
+      - name: Install WhiteRabbit test dependencies
+        run: pip install -e . pytest pytest-xdist ruff mypy
+
+      - name: Verify Python formatting
+        run: ruff format --check .
+
+      - name: Verify Python lint
+        run: ruff check .
+
+      - name: Verify Python types
+        run: mypy --strict __init__.py whiterabbit tests
+
+      - name: Verify Python tests
+        run: pytest -n auto -q
+
+      - name: Bootstrap published release baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            node scripts/bootstrap-release-baseline.mjs --dry-run
+          else
+            node scripts/bootstrap-release-baseline.mjs
+          fi
+
+      - name: Release
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          log_file="$(mktemp)"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            npx semantic-release --dry-run --no-ci 2>&1 | tee "$log_file"
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          else
+            npx semantic-release 2>&1 | tee "$log_file"
+            if grep -Eq "Published release |Created tag v[0-9]" "$log_file"; then
+              echo "released=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "released=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Sync workspace to released commit
+        if: steps.release.outputs.released == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin master --tags
+          git checkout master
+          git reset --hard origin/master
+
+      - name: Publish Custom Node to Comfy Registry
+        if: steps.release.outputs.released == 'true'
+        uses: Comfy-Org/publish-node-action@main
+        with:
+          skip_checkout: true
+          personal_access_token: ${{ secrets.REGISTRY_ACCESS_TOKEN }}

@@ -13,6 +13,9 @@ env/
 ENV/
 .conda/
 
+# Node.js
+node_modules/
+
 # Tool caches
 .pytest_cache/
 .mypy_cache/

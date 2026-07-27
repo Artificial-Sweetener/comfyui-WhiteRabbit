@@ -137,3 +137,21 @@ compatibility, runtime safety, and long-term maintainability.
 - Ruff format, Ruff lint, strict mypy, and the full pytest suite pass.
 - ComfyUI imports the extension and exposes the intended v3 nodes.
 - Relevant model paths and RIFE behavior are directly verified.
+
+## Commit and release policy
+
+- Use Conventional Commits in the form `type(scope): subject`; keep the subject
+  imperative, concise, and free of trailing punctuation.
+- Use one of `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `build`, `ci`, or
+  `chore`. Keep commits atomic and cohesive.
+- Semantic release creates versions from commits after the latest `vX.Y.Z` tag:
+  `feat` creates a minor release; `fix` and `perf` create a patch release; an
+  exclamation mark after the type or scope, or a `BREAKING CHANGE:` footer,
+  creates a major release. The remaining allowed types do not release by
+  themselves.
+- Mark intentionally breaking public behavior explicitly, for example
+  `feat(rife)!: replace legacy timing controls`, and include a `BREAKING CHANGE:`
+  footer that states the migration required by workflow authors.
+- Do not manually bump release metadata or edit `CHANGELOG.md` for ordinary
+  releases. The release workflow owns `package.json`, `package-lock.json`,
+  `pyproject.toml`, `whiterabbit.__version__`, and the changelog.

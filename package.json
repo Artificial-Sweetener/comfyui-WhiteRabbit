@@ -1,0 +1,20 @@
+{
+  "name": "whiterabbit-comfyui",
+  "version": "1.1.1",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "packageManager": "npm@11.5.2",
+  "scripts": {
+    "release": "semantic-release",
+    "release:dry-run": "semantic-release --dry-run --no-ci"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "6.0.3",
+    "@semantic-release/commit-analyzer": "13.0.1",
+    "@semantic-release/exec": "7.1.0",
+    "@semantic-release/git": "10.0.1",
+    "@semantic-release/release-notes-generator": "14.1.1",
+    "semantic-release": "25.0.8"
+  }
+}
