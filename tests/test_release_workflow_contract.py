@@ -9,7 +9,6 @@ import subprocess
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-BASELINE_VERSION = "1.1.1"
 RELEASE_DEPENDENCIES = {
     "@semantic-release/changelog",
     "@semantic-release/commit-analyzer",
@@ -20,8 +19,8 @@ RELEASE_DEPENDENCIES = {
 }
 
 
-def test_release_managed_versions_match_published_baseline() -> None:
-    """Keep all source metadata at the published version until release time."""
+def test_release_managed_versions_stay_synchronized() -> None:
+    """Keep all release-managed source metadata on the same version."""
 
     pyproject_text = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
     package = json.loads((PROJECT_ROOT / "package.json").read_text("utf-8"))
@@ -35,11 +34,11 @@ def test_release_managed_versions_match_published_baseline() -> None:
     version_match = re.search(r'^version = "([^"]+)"$', pyproject_text, re.MULTILINE)
 
     assert version_match is not None
-    assert version_match.group(1) == BASELINE_VERSION
-    assert package["version"] == BASELINE_VERSION
-    assert package_lock["version"] == BASELINE_VERSION
-    assert package_lock["packages"][""]["version"] == BASELINE_VERSION
-    assert f'__version__ = "{BASELINE_VERSION}"' in package_init
+    version = version_match.group(1)
+    assert package["version"] == version
+    assert package_lock["version"] == version
+    assert package_lock["packages"][""]["version"] == version
+    assert f'__version__ = "{version}"' in package_init
 
 
 def test_release_dependencies_are_locked_and_private() -> None:

@@ -14,6 +14,14 @@ on:
         options:
           - "true"
           - "false"
+      publish_existing:
+        description: "Publish the checked-out release version to the Comfy Registry"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 permissions:
   contents: write
@@ -112,7 +120,7 @@ jobs:
           git reset --hard origin/master
 
       - name: Publish Custom Node to Comfy Registry
-        if: steps.release.outputs.released == 'true'
+        if: steps.release.outputs.released == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_existing == 'true')
         uses: Comfy-Org/publish-node-action@main
         with:
           skip_checkout: true
