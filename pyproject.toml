@@ -60,6 +60,10 @@ no_implicit_optional = true
 strict_equality = true
 explicit_package_bases = true
 
+[[tool.mypy.overrides]]
+module = ["numpy", "numpy.*"]
+follow_imports = "skip"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = ["--import-mode=importlib"]
