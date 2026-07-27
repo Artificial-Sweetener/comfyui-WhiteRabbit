@@ -1,0 +1,14 @@
+# Keep repository source and documentation deterministic across platforms.
+*.py text eol=lf
+*.toml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Preserve binary assets exactly as authored.
+*.bin -text
+*.ckpt -text
+*.pth -text
+*.pt -text
+*.safetensors -text

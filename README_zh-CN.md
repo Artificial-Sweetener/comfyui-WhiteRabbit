@@ -10,27 +10,25 @@
 
 ## 安装
 
-WhiteRabbit 支持两种布局：
-
-1) **外部基础包（存在时优先）**：`custom_nodes/comfyui-frame-interpolation/`
-2) **内置的应急副本（随本项目打包）**：`vendor/`
-
 **快速安装：**
 1. 将 **comfyui-WhiteRabbit** 文件夹放入 `ComfyUI/custom_nodes/`。
-2. 安装本节点所需的依赖：
-   ```bash
-   pip install -r requirements.txt
+2. 使用 ComfyUI 的 Python 环境安装本节点依赖：
+
+   ```powershell
+   python -m pip install -r requirements.txt
    ```
 
-**可选项：** 你可以在 `custom_nodes/` 目录中安装 [ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)。WhiteRabbit 会自动检测到它并复用其中的资源。如果你已经在用它，这尤其方便，因为无需同时保存两份 RIFE 模型。
+WhiteRabbit 使用 ComfyUI 原生的 `models/frame_interpolation/` 目录。RIFE 节点
+支持 4.7、4.9、4.25 和 4.26；缺少的目录内模型会自动下载，并在使用前通过
+SHA-256 校验。
 
 ### Python 依赖
 
-本节点依赖于 ComfyUI 已提供的核心包（如 `torch`、`torchvision`、`numpy`、`einops`、`pyyaml`）。你的**节点本地** `requirements.txt` 仅需新增：
+本节点使用 ComfyUI 已提供的 Python 包。节点本地依赖仅增加伽马校正的
+Lanczos 重采样器：
 
 ```
-packaging
-torchlanc
+torchlanc>=1.1.0
 ```
 
 ## 节点一览
@@ -39,7 +37,9 @@ torchlanc
 
 ### 时间扭曲者（Time Benders）
 
-这些节点通过 **RIFE** 插帧模型在时间上增删帧。为了获得一点点额外速度，它们被优化为协同工作，在多 RIFE 工作流中缓存 RIFE 模型，以获得小幅效率提升。
+这些节点通过 **RIFE 4.7、4.9、4.25 和 4.26** 在时间上增删帧。模型由
+ComfyUI 管理并在工作流中共享，同时完整保留 WhiteRabbit 的缩放金字塔、
+内部双向集成、自定义时序、FPS 转换、接缝分析和稳定控制。
 
 - **RIFE VFI Interpolate by Multiple**：帧插值的基础工具。将帧数乘以 2x、4x 等，它会生成让你的视频丝滑流畅的新帧。
 - **RIFE VFI FPS Resample**：时间旅行大师。把视频转换为指定目标帧率，自动处理补帧与丢帧。内置多种防止常见伪影（如闪烁）的措施，输出更干净。
@@ -87,11 +87,11 @@ torchlanc
 ## 许可与致谢
 - **项目许可：** GNU Affero General Public License v3.0（**AGPL-3.0**）。请阅读本仓库内完整的 [LICENSE](LICENSE)！AGPL-3.0 是强 Copyleft 许可。如果你分发本软件，你必须提供其对应的源代码；如果你让用户通过网络与修改过的版本交互，你也必须向他们提供该修改版本的对应源代码。
 
-- **依赖许可（MIT）：** 为了可靠性，本项目**内置（vendor）**了 **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)** 的极少量组件。这些文件遵循 MIT 许可，由 **[Fannovel16](https://github.com/Fannovel16)** 与其**[贡献者](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation/graphs/contributors)** 授权；参见 `LICENSES/MIT-ComfyUI-Frame-Interpolation.txt`：
-  - `vendor/vfi_utils.py`
-  - `vendor/rife/__init__.py`
-  - `vendor/rife/rife_arch.py`
-- 另外，本项目也在 [`interpolation.py`](interpolation.py) 中借鉴并改编了 **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)** 的少量内容。
+- **RIFE 4.7/4.9 架构署名（MIT）：** 原生旧检查点运行时源自
+  **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)**
+  中 **[Fannovel16](https://github.com/Fannovel16)** 及贡献者的工作；详见
+  `LICENSES/MIT-ComfyUI-Frame-Interpolation.txt`。RIFE 4.25/4.26 直接使用
+  ComfyUI 当前的五阶段 IFNet 架构。
 - **Batch Resize w/ Lanczos** 的 UI 设计受到了 [Kijai](https://github.com/kijai/) 优秀项目 [KJNodes](thub.com/kijai/ComfyUI-KJNodes) 中相似节点的启发。
 
 ### 研究引用

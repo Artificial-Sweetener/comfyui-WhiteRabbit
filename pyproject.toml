@@ -1,15 +1,28 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "whiterabbit"
 description = "Powerful video frame manipulation nodes for ComfyUI such as: efficient high quality batch scaling, arbitrary framerate resampling, seamless video loop tools, batch watermark composite, and more."
-version = "1.1.1"
-license = {file = "LICENSE"}
+version = "1.2.0"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE", "LICENSES/*"]
 requires-python = ">=3.10"
 classifiers = [
      "Operating System :: OS Independent",
      "Environment :: GPU :: NVIDIA CUDA",
 ]
 
-dependencies = ["torchlanc", "packaging"]
+dynamic = ["dependencies"]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.20",
+    "pytest>=9",
+    "pytest-xdist>=3.8",
+    "ruff>=0.15",
+]
 
 [project.urls]
 Repository = "https://github.com/Artificial-Sweetener/comfyui-WhiteRabbit"
@@ -21,3 +34,36 @@ PublisherId = "artificialsweetener"
 DisplayName = "WhiteRabbit"
 Icon = ""
 includes = []
+
+[tool.setuptools.packages.find]
+include = ["whiterabbit*"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "ANN"]
+ignore = ["ANN401"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+strict_equality = true
+explicit_package_bases = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--import-mode=importlib"]
+filterwarnings = [
+    "error",
+    "ignore:`torch.jit.script` is deprecated:DeprecationWarning",
+]

@@ -1,2 +1,1 @@
-packaging
-torchlanc
+torchlanc>=1.1.0

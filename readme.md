@@ -12,26 +12,25 @@ While some of these nodes certainly can be used for single-image tasks, every on
 
 ## Installation
 
-WhiteRabbit supports two layouts:
-
-1) **External base pack (preferred when present)**: `custom_nodes/comfyui-frame-interpolation/`
-2) **Vendored fallback (bundled here)**: `vendor/`
-
-**Quick install:**
 1. Drop the **comfyui-WhiteRabbit** folder into `ComfyUI/custom_nodes/`.
-2. Install this node’s requirements:
-   ```bash
-   pip install -r requirements.txt
+2. Install the node requirements with ComfyUI's Python environment:
 
-**Optionally**, you can install [ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation) inside of your custom_nodes/ folder. WhiteRabbit will detect it and use resources from there. Especially handy if you already use it, since it avoids keeping two versions of the RIFE models.
+   ```powershell
+   python -m pip install -r requirements.txt
+   ```
+
+WhiteRabbit uses ComfyUI's native `models/frame_interpolation/` directory. Select
+RIFE 4.7, 4.9, 4.25, or 4.26 in any WhiteRabbit RIFE node. A missing catalog
+checkpoint downloads automatically into that directory and is verified by SHA-256
+before use.
 
 ### Python requirements
 
-This node relies on ComfyUI’s core packages (e.g., `torch`, `torchvision`, `numpy`, `einops`, `pyyaml`) that are already provided by ComfyUI. Your **node-local** `requirements.txt` only adds:
+This node relies on the Python packages supplied by ComfyUI. The node-local
+requirement adds the gamma-correct Lanczos resampler:
 
 ```
-packaging
-torchlanc
+torchlanc>=1.1.0
 ```
 
 ## The Nodes
@@ -40,7 +39,10 @@ This pack of nodes helps you solve some of the trickiest problems in video creat
 
 ### Time Benders
 
-These nodes bend time itself to add or remove frames, all powered by the **RIFE** interpolation model. For a slight speed boost, they’re optimized to work together, caching the RIFE model for small efficiency gains in multi‑RIFE workflows.
+These nodes bend time itself to add or remove frames with **RIFE 4.7, 4.9,
+4.25, and 4.26**. They share ComfyUI-managed model instances across a workflow
+and retain WhiteRabbit's scale pyramid, internal bidirectional ensemble, arbitrary
+timing, FPS conversion, seam analysis, and stabilization controls.
 
 - **RIFE VFI Interpolate by Multiple**: The basic tool for frame interpolation. Multiply your frames by 2×, 4×, etc., and it’ll generate the new frames needed to make your video silky smooth.
 - **RIFE VFI FPS Resample**: A master of time travel. Convert your video to a specific target frame rate, automatically handling both adding and dropping frames as needed. Includes features to prevent common artifacts like flicker for a clean result.
@@ -58,11 +60,11 @@ Making a seamless video loop can feel like a riddle. These nodes give you the ke
 - **Assemble Loop Frames**: The final piece. After your interpolator works its magic, this node takes your original video and appends the new seam frames to the end, assembling your complete, continuous loop.
 - **Autocrop to Loop**: Don't get lost in the forest of frames! This clever node intelligently analyzes your video to find the best possible place to crop from the end, ensuring your loop flows as smoothly as can be.
 - **Trim Batch Ends**: A simple tool for trimming a fixed number of frames from the beginning or end of your clip, perfect for removing unwanted intros or outros.
-- **Roll Frames**: Change the order of the images in a batch cyclicly. In the context of a loop, this will change on what frame your loop starts.
+- **Roll Frames**: Change the order of the images in a batch cyclically. In the context of a loop, this will change on what frame your loop starts.
 - **Unroll Frames**: Undo the work done by the above node; you may want to roll frames for a specific process (like interpolation) before returning them to their original order. This node comes with the ability to add a frame multiplier to put it in sync with a **RIFE VFI Interpolate by Multiple** that comes before.
 
 ![interpolate_loop_seam](examples/interpolate_loop_seam.png)
-> *Example:* Stitch a seamless loop with **Prepare Loop Frames** ➜ **RIFE Seam Timing Analyzer** ➜ **RIFE VFI Custom Timing ➜ **Assemble Loop Frames**. You can drop this png into ComfyUI and take it for a test drive!
+> *Example:* Stitch a seamless loop with **Prepare Loop Frames** ➜ **RIFE Seam Timing Analyzer** ➜ **RIFE VFI Custom Timing** ➜ **Assemble Loop Frames**. You can drop this PNG into ComfyUI and take it for a test drive!
 
 ![interpolate_loop_seam](examples/autocrop_to_loop.png)
 > *Example:* The best loop is the one you already have. **Autocrop to Loop** can help you find the best end frame by analyzing the visual difference and timing between trailing frames in your clip.
@@ -88,12 +90,13 @@ These nodes play support!
 ## License & Acknowledgements
 - **Project License:** GNU Affero General Public License v3.0 (**AGPL‑3.0**). Please read the full [LICENSE](LICENSE) included with this repo! The AGPL-3.0 is a strong copyleft license. If you convey the software, you must provide its corresponding source; and if you let users interact with a modified version over a network, you must offer them that modified version’s corresponding source.
 
-- **Dependency License (MIT):** This project **vendors** minimal components from **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)** for reliability. These files are licensed under MIT by **[Fannovel16](https://github.com/Fannovel16)** and **[contributors](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation/graphs/contributors)**; see the included license at `LICENSES/MIT-ComfyUI-Frame-Interpolation.txt`:
-  - `vendor/vfi_utils.py`
-  - `vendor/rife/__init__.py`
-  - `vendor/rife/rife_arch.py`
-- From **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)**, it also adapt small portions within [`interpolation.py`](interpolation.py).
-- UI for **Batch Resize w/ Lanczos** was inspired by the similar node from [Kijai](https://github.com/kijai/)'s excellent [KJNodes](thub.com/kijai/ComfyUI-KJNodes).
+- **RIFE 4.7/4.9 architecture attribution (MIT):** The native legacy-checkpoint
+  runtime derives from work by
+  **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)**,
+  by **[Fannovel16](https://github.com/Fannovel16)** and contributors. See
+  `LICENSES/MIT-ComfyUI-Frame-Interpolation.txt`. WhiteRabbit imports the current
+  five-block IFNet architecture directly from ComfyUI for RIFE 4.25/4.26.
+- UI for **Batch Resize w/ Lanczos** was inspired by the similar node from [Kijai](https://github.com/kijai/)'s excellent [KJNodes](https://github.com/kijai/ComfyUI-KJNodes).
 
 ### Research citations
 
