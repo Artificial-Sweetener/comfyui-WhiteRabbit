@@ -87,16 +87,28 @@ These nodes play support!
 ![watermark](examples/watermark.png)
 > *Example:* Apply a watermark to each frame rapidly with smart configuration options. Workflow included.
 
-## License & Acknowledgements
-- **Project License:** GNU Affero General Public License v3.0 (**AGPL‑3.0**). Please read the full [LICENSE](LICENSE) included with this repo! The AGPL-3.0 is a strong copyleft license. If you convey the software, you must provide its corresponding source; and if you let users interact with a modified version over a network, you must offer them that modified version’s corresponding source.
+## License
 
-- **RIFE 4.7/4.9 architecture attribution (MIT):** The native legacy-checkpoint
-  runtime derives from work by
-  **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)**,
-  by **[Fannovel16](https://github.com/Fannovel16)** and contributors. See
-  `LICENSES/MIT-ComfyUI-Frame-Interpolation.txt`. WhiteRabbit imports the current
-  five-block IFNet architecture directly from ComfyUI for RIFE 4.25/4.26.
-- UI for **Batch Resize w/ Lanczos** was inspired by the similar node from [Kijai](https://github.com/kijai/)'s excellent [KJNodes](https://github.com/kijai/ComfyUI-KJNodes).
+WhiteRabbit is **Free and Open Source Software (FOSS)**, distributed under the
+**[GNU Affero General Public License v3.0](LICENSE)**.
+
+## Acknowledgements
+
+WhiteRabbit stands on an extraordinary amount of work from other people. I am
+genuinely grateful to all of them.
+
+- **ComfyUI:** Thank you to [comfyanonymous](https://github.com/comfyanonymous),
+  [Comfy Org](https://github.com/Comfy-Org), and everyone who contributes to
+  [ComfyUI](https://github.com/Comfy-Org/ComfyUI). Its runtime, model management,
+  and open node ecosystem make WhiteRabbit possible.
+- **ComfyUI-Frame-Interpolation:** I'm grateful to
+  [Fannovel16](https://github.com/Fannovel16) and the contributors to
+  [ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation).
+  Their work brought practical RIFE interpolation to ComfyUI and provided an
+  invaluable technical reference for WhiteRabbit's enhanced RIFE support.
+- **KJNodes:** [Kijai](https://github.com/kijai/) and the contributors to
+  [KJNodes](https://github.com/kijai/ComfyUI-KJNodes) inspired the UI for
+  **Batch Resize w/ Lanczos**.
 
 ### Research citations
 

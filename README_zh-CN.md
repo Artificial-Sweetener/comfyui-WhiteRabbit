@@ -84,15 +84,27 @@ ComfyUI 管理并在工作流中共享，同时完整保留 WhiteRabbit 的缩�
 ![watermark](examples/watermark.png)
 > 示例：用灵活的配置选项为每一帧快速添加水印。已附工作流。
 
-## 许可与致谢
-- **项目许可：** GNU Affero General Public License v3.0（**AGPL-3.0**）。请阅读本仓库内完整的 [LICENSE](LICENSE)！AGPL-3.0 是强 Copyleft 许可。如果你分发本软件，你必须提供其对应的源代码；如果你让用户通过网络与修改过的版本交互，你也必须向他们提供该修改版本的对应源代码。
+## 许可
 
-- **RIFE 4.7/4.9 架构署名（MIT）：** 原生旧检查点运行时源自
-  **[ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)**
-  中 **[Fannovel16](https://github.com/Fannovel16)** 及贡献者的工作；详见
-  `LICENSES/MIT-ComfyUI-Frame-Interpolation.txt`。RIFE 4.25/4.26 直接使用
-  ComfyUI 当前的五阶段 IFNet 架构。
-- **Batch Resize w/ Lanczos** 的 UI 设计受到了 [Kijai](https://github.com/kijai/) 优秀项目 [KJNodes](thub.com/kijai/ComfyUI-KJNodes) 中相似节点的启发。
+WhiteRabbit 是**自由及开放源代码软件（FOSS）**，依据
+**[GNU Affero 通用公共许可证 v3.0](LICENSE)** 发布。
+
+## 致谢
+
+WhiteRabbit 建立在无数人的杰出工作之上。我真心感谢他们每一位。
+
+- **ComfyUI：** 感谢 [comfyanonymous](https://github.com/comfyanonymous)、
+  [Comfy Org](https://github.com/Comfy-Org) 以及所有为
+  [ComfyUI](https://github.com/Comfy-Org/ComfyUI) 做出贡献的人。它的运行时、
+  模型管理与开放节点生态让 WhiteRabbit 成为可能。
+- **ComfyUI-Frame-Interpolation：** 感谢
+  [Fannovel16](https://github.com/Fannovel16) 和
+  [ComfyUI-Frame-Interpolation](https://github.com/Fannovel16/ComfyUI-Frame-Interpolation)
+  的所有贡献者。他们把实用的 RIFE 插帧能力带入 ComfyUI，也为 WhiteRabbit
+  的增强型 RIFE 支持提供了宝贵的技术参考。
+- **KJNodes：** [Kijai](https://github.com/kijai/) 和
+  [KJNodes](https://github.com/kijai/ComfyUI-KJNodes) 的贡献者启发了
+  **Batch Resize w/ Lanczos** 的界面设计。
 
 ### 研究引用
 
