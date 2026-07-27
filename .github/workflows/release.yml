@@ -34,6 +34,11 @@ jobs:
           node-version: 22.14.0
           cache: npm
 
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+
       - name: Install release dependencies
         run: npm ci
 
