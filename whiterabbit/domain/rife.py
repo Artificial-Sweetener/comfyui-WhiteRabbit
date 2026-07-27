@@ -8,7 +8,9 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-RIFE_SCALE_FACTORS = [0.25, 0.5, 1.0, 2.0, 4.0]
+RIFE_SCALE_FACTOR_MINIMUM = 0.25
+RIFE_SCALE_FACTOR_MAXIMUM = 4.0
+RIFE_SCALE_FACTOR_STEP = 0.05
 RIFE_TIMING_MODES = [
     "linear",
     "gamma_in",
@@ -151,7 +153,9 @@ def map_timing(
 __all__ = [
     "RIFE_MODELS",
     "RIFE_MODEL_NAMES",
-    "RIFE_SCALE_FACTORS",
+    "RIFE_SCALE_FACTOR_MAXIMUM",
+    "RIFE_SCALE_FACTOR_MINIMUM",
+    "RIFE_SCALE_FACTOR_STEP",
     "RIFE_TIMING_MODES",
     "FpsResampleOptions",
     "RifeModelSpec",

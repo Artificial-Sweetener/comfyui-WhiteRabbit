@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "default_language": "en",
-  "source_contract_sha256": "8809f141f86a0a67625697b85b11e1ab85b2f6283d6ab86ef7a434b9e810a377",
+  "source_contract_sha256": "be88b1f8d8ce77cc1ecf93ab9f41454669a2bc3d10c6f9c27beb8b28d8853d20",
   "languages": [
     {
       "id": "en",

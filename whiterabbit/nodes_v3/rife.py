@@ -11,7 +11,9 @@ import torch
 
 from ..domain.rife import (
     RIFE_MODEL_NAMES,
-    RIFE_SCALE_FACTORS,
+    RIFE_SCALE_FACTOR_MAXIMUM,
+    RIFE_SCALE_FACTOR_MINIMUM,
+    RIFE_SCALE_FACTOR_STEP,
     RIFE_TIMING_MODES,
 )
 from ..services.rife import RifeService
@@ -50,10 +52,12 @@ def _scale_input(probe_only: bool = False) -> Any:
             "sharper/slower."
         )
     )
-    return io.Combo.Input(
+    return io.Float.Input(
         "scale_factor",
-        options=RIFE_SCALE_FACTORS,
         default=1.0,
+        min=RIFE_SCALE_FACTOR_MINIMUM,
+        max=RIFE_SCALE_FACTOR_MAXIMUM,
+        step=RIFE_SCALE_FACTOR_STEP,
         tooltip=tooltip,
     )
 
