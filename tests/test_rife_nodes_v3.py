@@ -67,12 +67,12 @@ def _rife_scale_factor_from_workflow(
             raise AssertionError(
                 f"{example_name} has no widget values for {node_type}."
             )
-        value = values[widget_index]
+        value: object = values[widget_index]
         if isinstance(value, bool) or not isinstance(value, int | float | str):
             raise AssertionError(
                 f"{example_name} has an invalid scale factor for {node_type}."
             )
-        return cast(int | float | str, value)
+        return value
     raise AssertionError(f"{example_name} does not contain {node_type}.")
 
 
