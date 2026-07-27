@@ -14,6 +14,8 @@ import torch
 from ..domain.image_geometry import chunk_spans
 from ..shared.tensor_validation import validate_image_batch
 
+MINIMUM_TILE_SIZE = 128
+
 
 class UpscaleModel(Protocol):
     """Runtime surface supplied by Comfy upscale model descriptors."""
@@ -69,7 +71,9 @@ class ModelUpscaler:
                     model,
                     source,
                     scale=scale,
-                    initial_tile=512 if tile_size == 0 else tile_size,
+                    initial_tile=(
+                        512 if tile_size == 0 else max(tile_size, MINIMUM_TILE_SIZE)
+                    ),
                     precision=precision,
                     management=management,
                     comfy_utils=comfy_utils,
@@ -94,7 +98,7 @@ class ModelUpscaler:
 
         tile = initial_tile
         overlap = 32
-        while tile >= 128:
+        while tile >= MINIMUM_TILE_SIZE:
             try:
                 steps = source.shape[0] * comfy_utils.get_tiled_scale_steps(
                     source.shape[3],

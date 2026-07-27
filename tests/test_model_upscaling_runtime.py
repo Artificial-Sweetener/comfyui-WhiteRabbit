@@ -71,6 +71,7 @@ class _FakeUtils(ModuleType):
     def __init__(self) -> None:
         super().__init__("comfy.utils")
         self.calls = 0
+        self.tile_sizes: list[int] = []
         self.ProgressBar = _FakeProgress
 
     @staticmethod
@@ -96,8 +97,9 @@ class _FakeUtils(ModuleType):
         upscale_amount: float,
         pbar: _FakeProgress,
     ) -> torch.Tensor:
-        del tile_x, tile_y, overlap, upscale_amount, pbar
+        del tile_y, overlap, upscale_amount, pbar
         self.calls += 1
+        self.tile_sizes.append(tile_x)
         return model(source)
 
 
@@ -129,3 +131,30 @@ def test_model_upscaler_chunks_batches_and_returns_model_to_cpu(
     assert comfy_utils.calls == 2
     assert management.memory_requests
     assert model.devices[-1] == "cpu"
+
+
+def test_model_upscaler_normalizes_too_small_manual_tiles(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Manual tiles below Comfy's safe minimum still execute at the minimum size."""
+
+    management = _FakeManagement()
+    comfy_utils = _FakeUtils()
+
+    def resolve_module(name: str) -> ModuleType:
+        return management if name == "comfy.model_management" else comfy_utils
+
+    monkeypatch.setattr(upscaling_module, "import_module", resolve_module)
+    image = torch.rand((1, 8, 8, 3), generator=torch.Generator().manual_seed(13))
+
+    output = ModelUpscaler().upscale(
+        _FakeUpscaleModel(),
+        image,
+        maximum_batch_size=1,
+        tile_size=64,
+        channels_last=False,
+        precision="fp32",
+    )
+
+    torch.testing.assert_close(output, image)
+    assert comfy_utils.tile_sizes == [128]
