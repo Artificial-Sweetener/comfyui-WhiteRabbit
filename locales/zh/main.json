@@ -1,0 +1,8 @@
+{
+  "nodeCategories": {
+    "video utils": "视频工具",
+    "image/post": "图像/后期处理",
+    "image/upscaling": "图像/放大",
+    "image/resize": "图像/调整大小"
+  }
+}

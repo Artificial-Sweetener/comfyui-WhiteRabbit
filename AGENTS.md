@@ -18,6 +18,30 @@ compatibility, runtime safety, and long-term maintainability.
 - Change internals freely and completely within that boundary.
 - Add characterization tests before structurally changing behavior-critical code.
 
+## Localization policy
+
+- Route every WhiteRabbit-owned visible node label, description, tooltip, output
+  label, category, and eligible option label through the canonical v3 schema and
+  its locale catalog. Do not create a second English catalog.
+- Treat `locales/languages.json` as the sole supported-locale registry. Do not
+  duplicate locale inventories in source, tools, tests, or documentation.
+- English v3 schemas are the canonical source and fallback language. Every
+  release-enabled non-English locale must provide complete direct translations
+  for every owned visible schema field in the same change.
+- Add or change visible English text and all release-enabled translations
+  atomically. Adding a locale requires complete catalog and README coverage.
+- Preserve serialized workflow compatibility: node IDs, categories, input IDs,
+  option values, output positions, and execution behavior are never translated.
+  Locale catalogs translate presentation only.
+- Preserve ComfyUI-owned and third-party text as supplied by ComfyUI; do not
+  maintain a parallel corpus for text WhiteRabbit does not own.
+- Keep each release-enabled localized README structurally and factually aligned
+  with `readme.md`, while writing natural, audience-appropriate prose rather
+  than mechanical translations.
+- Write translations directly. Maintain the locale terminology guide and do not
+  weaken locale-registry, coverage, stale-key, or integration validation to
+  accept incomplete work.
+
 ## Authoritative environment
 
 - Use Windows PowerShell syntax.

@@ -1,0 +1,240 @@
+{
+  "PrepareLoopFrames": {
+    "display_name": "🐇 准备循环帧",
+    "description": "准备循环接缝：为插帧器建立仅含最后一帧和第一帧的两帧批次，同时原样传递原始片段。",
+    "inputs": {
+      "images": {"name": "图像", "tooltip": "作为 IMAGE 批次输入的视频片段，形状为帧数×高×宽×通道，数值范围为 0–1。"}
+    },
+    "outputs": {
+      "0": {"name": "接缝插帧批次"},
+      "1": {"name": "原始图像"}
+    }
+  },
+  "AssembleLoopFrames": {
+    "display_name": "🐇 组装循环帧",
+    "description": "构建最终循环：只把接缝中新生成的中间帧追加到原始片段，不重复第一帧。",
+    "inputs": {
+      "original_images": {"name": "原始图像", "tooltip": "原始视频片段，形状为帧数×高×宽×通道。"},
+      "interpolated_frames": {"name": "插值帧", "tooltip": "连接最后一帧与第一帧的帧批次。首尾是原始帧，只有中间帧会被追加。"}
+    },
+    "outputs": {"0": {"name": "图像"}}
+  },
+  "RollFrames": {
+    "display_name": "🐇 循环偏移帧",
+    "description": "按整数偏移循环移动片段中的帧，并输出同一偏移量以便稍后还原。",
+    "inputs": {
+      "images": {"name": "图像", "tooltip": "视频片段，形状为帧数×高×宽×通道。"},
+      "offset": {"name": "偏移量", "tooltip": "旋转片段的距离。正数向时间前方移动，负数向后方移动。"}
+    },
+    "outputs": {"0": {"name": "图像"}, "1": {"name": "输出偏移量"}}
+  },
+  "UnrollFrames": {
+    "display_name": "🐇 还原循环偏移帧",
+    "description": "在插帧后还原先前的循环偏移，并将新增帧计入偏移量。",
+    "inputs": {
+      "images": {"name": "图像", "tooltip": "插帧后的视频片段，形状为帧数×高×宽×通道。"},
+      "base_offset": {"name": "基础偏移量", "tooltip": "使用 Roll Frames 节点输出的准确 offset_out。"},
+      "m": {"name": "每间隔新增帧数", "tooltip": "每个原始帧间隔新增的中间帧数量，也就是插帧倍率。"}
+    },
+    "outputs": {"0": {"name": "图像"}}
+  },
+  "AutocropToLoop": {
+    "display_name": "🐇 自动裁剪为循环",
+    "description": "自动裁剪片段末尾以获得更平滑的循环：测试不同裁剪量并为接缝评分，使接缝看起来像正常的相邻帧变化。",
+    "inputs": {
+      "clip_frames": {"name": "片段帧", "tooltip": "完整视频片段，采用 NHWC 布局、数值范围为 0–1。会测试从 0 到最大末尾裁剪帧数的所有裁剪量。"},
+      "max_end_crop_frames": {"name": "最大末尾裁剪帧数", "tooltip": "在片段末尾测试的最大裁剪量。数值越高，候选越多、速度越慢，但可能找到更好的循环。"},
+      "include_first_step": {"name": "包含首段步长", "tooltip": "将第一对相邻帧（第 0 帧到第 1 帧）作为目标步长和相似度。"},
+      "include_last_step": {"name": "包含末段步长", "tooltip": "将保留区域内最后一对相邻帧作为目标。"},
+      "include_global_median_step": {"name": "包含全局中位步长", "tooltip": "同时使用保留区域内的中位步长，需要至少 3 帧，可减轻异常值影响。"},
+      "seam_window_frames": {"name": "接缝窗口帧数", "tooltip": "在接缝两侧对多对对齐帧取平均。数值越大，结果越稳健。"},
+      "distance_metric": {"name": "距离度量", "tooltip": "用于匹配步长的度量方式。L1 通常更宽容，MSE 对较大误差惩罚更重。"},
+      "score_in_8bit": {"name": "以 8 位评分", "tooltip": "使用 8 位视图评分以模拟导出效果；输出视频仍保持浮点精度。"},
+      "use_ssim_similarity": {"name": "使用 SSIM 相似度", "tooltip": "加入 SSIM，使接缝看起来像正常相邻帧，避免冻结或跳变。"},
+      "use_exposure_guard": {"name": "使用曝光保护", "tooltip": "促进接缝两侧亮度平滑变化，减少闪烁突变。"},
+      "use_flow_guard": {"name": "使用光流保护", "tooltip": "鼓励接缝两侧运动连续，需要 OpenCV，运行更慢。"},
+      "weight_step_size": {"name": "步长权重", "tooltip": "匹配运动步长的重要程度。数值越高，冻结和跳变风险越低。"},
+      "weight_similarity": {"name": "相似度权重", "tooltip": "视觉相似度（SSIM）的重要程度，有助于避免接缝看起来冻结。"},
+      "weight_exposure": {"name": "曝光权重", "tooltip": "接缝两侧亮度均匀性的重要程度。"},
+      "weight_flow": {"name": "光流权重", "tooltip": "接缝两侧运动连续性的重要程度。"},
+      "ssim_downsample_scales": {"name": "SSIM 降采样尺度", "tooltip": "用于平均的 SSIM 尺度，以逗号分隔。例如 1,2 表示全分辨率和半分辨率。"},
+      "accelerate_with_gpu": {"name": "使用 GPU 加速", "tooltip": "启用且 CUDA 可用时，在 GPU 上评分以显著加速，结果保持一致。"},
+      "use_mixed_precision": {"name": "使用混合精度", "tooltip": "启用 GPU 时，以混合精度计算 SSIM 和卷积；大型片段会更快。"}
+    },
+    "outputs": {
+      "0": {"name": "裁剪后的片段"},
+      "1": {"name": "末尾裁剪帧数"},
+      "2": {"name": "裁剪后长度"},
+      "3": {"name": "评分"},
+      "4": {"name": "诊断 CSV"}
+    }
+  },
+  "TrimBatchEnds": {
+    "display_name": "🐇 裁剪批次首尾",
+    "description": "快速移除视频片段开头和/或结尾的帧，并始终至少保留一帧。",
+    "inputs": {
+      "clip_frames": {"name": "片段帧", "tooltip": "视频片段，形状为帧数×高×宽×通道，数值范围为 0–1。"},
+      "trim_start_frames": {"name": "裁剪起始帧数", "tooltip": "从片段开头移除的帧数。"},
+      "trim_end_frames": {"name": "裁剪末尾帧数", "tooltip": "从片段结尾移除的帧数。"}
+    },
+    "outputs": {"0": {"name": "图像"}}
+  },
+  "RIFE_VFI_Opt": {
+    "display_name": "🐇 RIFE VFI 按倍率插帧",
+    "description": "使用 RIFE 4.7、4.9、4.25 或 4.26 按选定倍率为片段插帧，在每对原始帧之间均匀加入中间帧。",
+    "inputs": {
+      "ckpt_name": {"name": "RIFE 模型", "tooltip": "选择用于插帧的 RIFE 4.7、4.9、4.25 或 4.26。缺失的目录模型会自动下载到 ComfyUI 的 frame_interpolation 模型目录。"},
+      "frames": {"name": "帧", "tooltip": "输入视频片段，每张图像对应一帧。"},
+      "multiplier": {"name": "倍率", "tooltip": "通过添加额外帧平滑运动。2 会在每对帧之间添加 1 帧，4 会添加 3 帧。"},
+      "scale_factor": {"name": "缩放系数", "tooltip": "质量与速度的取舍。建议使用 1.0；更低更快但更柔和，更高更清晰但更慢。"},
+      "ensemble": {"name": "双向集成", "tooltip": "混合正向和反向预测以减少伪影，运行会更慢。"},
+      "clear_cache_after_n_frames": {"name": "每 N 帧清理缓存", "tooltip": "每生成 N 帧后释放 GPU 显存，属于高级控制。设为 0 则从不清理。"},
+      "optional_interpolation_states": {"name": "可选插帧状态", "tooltip": "跳过指定帧对的中间帧，例如场景切换；时间轴保持不变。"}
+    },
+    "outputs": {"0": {"name": "图像"}}
+  },
+  "RIFE_VFI_Advanced": {
+    "display_name": "🐇 RIFE VFI 自定义时序",
+    "description": "使用 RIFE 4.7、4.9、4.25 或 4.26 自定义插帧时序。仍按倍率插帧，但可控制中间帧的位置、缓入缓出、范围或自定义 t 列表。",
+    "inputs": {
+      "ckpt_name": {"name": "RIFE 模型", "tooltip": "选择用于插帧的 RIFE 4.7、4.9、4.25 或 4.26。缺失的目录模型会自动下载到 ComfyUI 的 frame_interpolation 模型目录。"},
+      "frames": {"name": "帧", "tooltip": "输入视频片段，每张图像对应一帧。"},
+      "multiplier": {"name": "倍率", "tooltip": "每对原始帧之间创建的中间帧数量。0 表示直接传递，不创建新帧。"},
+      "t_mode": {"name": "时序模式", "tooltip": "决定新帧随时间分布的方式：线性、缓入缓出、限制范围，或提供自定义列表。", "options": {"linear": "线性", "gamma_in": "伽马缓入", "gamma_out": "伽马缓出", "gamma_in_out": "伽马缓入缓出", "bounded_linear": "限定范围线性", "custom_list": "自定义列表"}},
+      "t_gamma": {"name": "时序伽马", "tooltip": "伽马模式的缓动强度。数值越高，缓动越明显。"},
+      "t_min": {"name": "最小 t", "tooltip": "两帧之间允许的最早位置。0 表示恰好位于第一帧；与限定范围线性模式配合使用。"},
+      "t_max": {"name": "最大 t", "tooltip": "两帧之间允许的最晚位置。1 表示恰好位于下一帧；与限定范围线性模式配合使用。"},
+      "scale_factor": {"name": "缩放系数", "tooltip": "质量与速度的取舍。建议使用 1.0；更低更快但更柔和，更高更清晰但更慢。"},
+      "ensemble": {"name": "双向集成", "tooltip": "混合正向和反向预测以减少伪影，运行会更慢。"},
+      "clear_cache_after_n_frames": {"name": "每 N 帧清理缓存", "tooltip": "每生成 N 帧后释放 GPU 显存，属于高级控制。设为 0 则从不清理。"},
+      "custom_t_list_csv": {"name": "自定义 t 列表 CSV", "tooltip": "两帧之间的精确位置，以逗号分隔，范围为 0–1，例如 0.18,0.41,0.66。会覆盖时序安排。"},
+      "optional_interpolation_states": {"name": "可选插帧状态", "tooltip": "跳过指定帧对的中间帧，例如场景切换；时间轴保持不变。"}
+    },
+    "outputs": {"0": {"name": "图像"}}
+  },
+  "RIFE_SeamTimingAnalyzer": {
+    "display_name": "🐇 RIFE 接缝时序分析器",
+    "description": "寻找平滑循环时序：测量片段运动，并为最后一帧到第一帧的接缝求解一组自然混合的 t 值。",
+    "inputs": {
+      "ckpt_name": {"name": "RIFE 模型", "tooltip": "选择 RIFE 4.7、4.9、4.25 或 4.26，仅用于测试候选时序。缺失的目录模型会自动下载到 ComfyUI 的 frame_interpolation 模型目录。"},
+      "scale_factor": {"name": "缩放系数", "tooltip": "探测渲染的质量与速度取舍，建议使用 1.0。"},
+      "ensemble": {"name": "双向集成", "tooltip": "混合正向和反向预测以减少伪影，运行会更慢。"},
+      "full_clip": {"name": "完整片段", "tooltip": "输入视频片段，至少需要 2 帧。实际运动决定循环接缝时序。"},
+      "multiplier": {"name": "倍率", "tooltip": "计划在循环接缝的最后一帧到第一帧之间创建的新帧数量。设为 0 可跳过。"},
+      "use_first_two": {"name": "使用前两帧", "tooltip": "匹配片段中前两帧之间的运动。"},
+      "use_last_two": {"name": "使用后两帧", "tooltip": "匹配片段中后两帧之间的运动。"},
+      "use_global_median": {"name": "使用全局中位数", "tooltip": "使用整个片段的中位运动，需要至少 3 帧，可减轻异常值影响。"},
+      "calibrate_metric": {"name": "校准度量", "tooltip": "求解时比较帧的方式：MSE 更敏感，L1 更宽容。"},
+      "calibrate_iters": {"name": "校准迭代次数", "tooltip": "每次求解的搜索深度。数值越高越慢，但匹配更紧密。"},
+      "t_min": {"name": "最小 t", "tooltip": "接缝处允许的最早混合位置。0 表示恰好位于最后一帧。"},
+      "t_max": {"name": "最大 t", "tooltip": "接缝处允许的最晚混合位置。保持低于 1.0，以免贴在第一帧上。"},
+      "auto_tmax": {"name": "自动最大 t", "tooltip": "自动将上限推近下一帧，以达到目标运动步长。"},
+      "t_cap": {"name": "t 安全上限", "tooltip": "自动上限使用的安全限制，使其略低于 1.0。"}
+    },
+    "outputs": {"0": {"name": "t 列表 CSV"}, "1": {"name": "倍率"}}
+  },
+  "RIFE_FPS_Resample": {
+    "display_name": "🐇 RIFE VFI 帧率重采样",
+    "description": "使用 RIFE 4.7、4.9、4.25 或 4.26 将片段从一种 FPS 转换为另一种。非整数转换会合成中间帧，整数降帧只抽取帧；可选稳定器可减少闪烁并保护边缘。",
+    "inputs": {
+      "ckpt_name": {"name": "RIFE 模型", "tooltip": "选择用于插帧的 RIFE 4.7、4.9、4.25 或 4.26。缺失的目录模型会自动下载到 ComfyUI 的 frame_interpolation 模型目录。"},
+      "frames": {"name": "帧", "tooltip": "输入视频片段，每张图像对应一帧。"},
+      "fps_in": {"name": "输入帧率", "tooltip": "视频片段当前的帧率，以每秒帧数表示。"},
+      "fps_out": {"name": "输出帧率", "tooltip": "期望的目标帧率，以每秒帧数表示。"},
+      "scale_factor": {"name": "缩放系数", "tooltip": "质量与速度的取舍。建议使用 1.0；更低更快但更柔和，更高更清晰但更慢。"},
+      "ensemble": {"name": "双向集成", "tooltip": "混合正向和反向预测以减少伪影，运行会更慢。"},
+      "linearize": {"name": "线性光处理", "tooltip": "在线性光空间中处理，以更准确地保留亮度和渐变，运行会更慢。"},
+      "lf_guardrail": {"name": "低频保护", "tooltip": "使整体亮度和渐变接近原始帧对，减少闪烁。"},
+      "lf_sigma": {"name": "低频平滑强度", "tooltip": "低频平滑的强度。数值越高，变化越平滑。"},
+      "source_pair_match": {"name": "源帧对匹配", "tooltip": "将曝光和对比度匹配到源帧对，以减少闪烁。"},
+      "match_a_cap": {"name": "曝光缩放上限", "tooltip": "曝光缩放允许的最大变化量。"},
+      "match_b_cap": {"name": "亮度偏移上限", "tooltip": "亮度偏移允许的最大变化量。"},
+      "edge_band_lock": {"name": "边缘带锁定", "tooltip": "保护锐利边缘：在边缘附近混入更多最近的真实帧，以避免涂抹。"},
+      "tau_low": {"name": "低边缘阈值", "tooltip": "边缘灵敏度的较低阈值。较小的值会检测到更多边缘。"},
+      "tau_high": {"name": "高边缘阈值", "tooltip": "边缘灵敏度的较高阈值。较大的值只检测强边缘。"},
+      "band_radius": {"name": "边缘带半径", "tooltip": "边缘保护带的宽度，以像素为单位。"},
+      "band_soft_sigma": {"name": "边缘带柔化", "tooltip": "柔化边缘保护带。数值越高，过渡越平滑。"},
+      "clear_cache_after_n_frames": {"name": "每 N 帧清理缓存", "tooltip": "每生成 N 个输出帧后释放 GPU 显存，属于高级控制。设为 0 则从不清理。"}
+    },
+    "outputs": {"0": {"name": "图像"}}
+  },
+  "PixelHold": {
+    "display_name": "🐇 像素保持",
+    "description": "当变化较小时，将每帧的部分区域锁定到选定参考图像或片段帧。适合稳定平坦区域或背景，同时让运动区域正常通过。",
+    "inputs": {
+      "frames": {"name": "帧", "tooltip": "视频片段，形状为帧数×高×宽×通道，数值范围为 0–1。"},
+      "ref_source": {"name": "参考来源", "tooltip": "选择参考图像：外部图像或当前片段中的某一帧。", "options": {"external": "外部图像", "batch_index": "片段帧索引"}},
+      "ref_index": {"name": "参考帧索引", "tooltip": "使用片段帧作为参考时，指定要使用的帧。"},
+      "reference": {"name": "外部参考图像", "tooltip": "可选的外部参考图像，形状为 1×高×宽×通道。尺寸不同会自动调整为匹配大小。"},
+      "linearize": {"name": "线性颜色处理", "tooltip": "在线性颜色空间中处理，以获得更稳定的平坦区域结果。"},
+      "auto_luma": {"name": "自动亮度灵敏度", "tooltip": "自动适应每帧的亮度变化灵敏度。"},
+      "auto_k": {"name": "自动保持强度", "tooltip": "自动保持强度。数值越高，越多区域锁定到参考图像；通常使用 2–3。"},
+      "tau_luma": {"name": "亮度阈值", "tooltip": "自动模式关闭时的手动亮度阈值。数值越低，锁定越严格。"},
+      "tau_grad": {"name": "梯度阈值", "tooltip": "允许的边缘变化量。数值越低，对边缘的保护越强。"},
+      "mode": {"name": "处理模式", "tooltip": "Tile 模式快速且稳健；Pixel 模式更细致但更容易产生噪声。", "options": {"tile": "分块", "pixel": "像素"}},
+      "tile_size": {"name": "分块大小", "tooltip": "使用分块模式时每个块的尺寸。"},
+      "score_mode": {"name": "评分模式", "tooltip": "分块衡量变化的方式：平均绝对差较快，中位绝对偏差更稳健。", "options": {"l1_tile": "平均绝对差", "mad_tile": "中位绝对偏差"}},
+      "edge_band": {"name": "边缘保护带", "tooltip": "保护强边缘周围的带状区域，避免晃动或拉伸。"},
+      "band_radius": {"name": "保护带半径", "tooltip": "受保护边缘带的宽度，以像素为单位。"},
+      "tau_edge_low": {"name": "低运动边缘阈值", "tooltip": "低于该值时视为低运动，用于边缘保护带。"},
+      "tau_edge_high": {"name": "高运动边缘阈值", "tooltip": "高于该值时视为高运动，用于边缘保护带。"},
+      "apply": {"name": "保持范围", "tooltip": "保持整张图像，或只保持其平滑的低频部分。", "options": {"all": "全部", "lowfreq": "低频部分"}},
+      "dilate": {"name": "扩张", "tooltip": "扩张遮罩的像素数量。"},
+      "feather_sigma": {"name": "羽化强度", "tooltip": "柔化遮罩边缘的强度，以像素为单位。"},
+      "process_on": {"name": "处理设备", "tooltip": "选择 CPU 或 GPU。自动模式会在超大帧时切换到 GPU。", "options": {"auto": "自动", "cpu": "中央处理器（CPU）", "gpu": "图形处理器（GPU）"}},
+      "gpu_clear_every": {"name": "GPU 清理间隔", "tooltip": "使用 GPU 且大于 0 时，每处理 N 帧释放一次显存。"}
+    },
+    "outputs": {"0": {"name": "图像"}, "1": {"name": "遮罩预览"}}
+  },
+  "UpscaleWithModelAdvanced": {
+    "display_name": "🐇 使用模型放大（高级）",
+    "description": "基于 ComfyUI 原生的“使用模型放大图像”节点，提供大批次调优、避免缓慢的显存不足回退，以及速度优化控制。默认行为接近原节点。",
+    "inputs": {
+      "upscale_model": {"name": "放大模型", "tooltip": "选择 ESRGAN 放大模型，例如 2× 或 4×。"},
+      "image": {"name": "图像", "tooltip": "要放大的图像，可接受批次，形状为帧数×高×宽×通道，数值范围为 0–1。"},
+      "max_batch_size": {"name": "最大批次大小", "tooltip": "一次处理的最大图像数量。0 表示一次处理全部；遇到显存不足时设为大于 0 的值。"},
+      "tile_size": {"name": "分块大小", "tooltip": "每个图像块的尺寸。0 表示自动，从 512 开始，显存不足时依次降为 256 和 128。"},
+      "channels_last": {"name": "通道最后布局", "tooltip": "在部分 GPU 上启用可小幅加速；没有收益时请保持关闭。"},
+      "precision": {"name": "精度", "tooltip": "数学精度模式。fp32 最稳妥；fp16 和 bf16 在许多 GPU 上更快，但可能影响图像质量。"}
+    },
+    "outputs": {"0": {"name": "图像"}}
+  },
+  "BatchResizeWithLanczos": {
+    "display_name": "🐇 使用 Lanczos 批量调整大小",
+    "description": "由 CUDA 加速、进行伽马校正的 Lanczos 调整器（TorchLanc）。支持保持宽高比、拉伸、裁剪、填充和可整除裁剪等模式。节点功能参考 Kijai 的调整大小节点。",
+    "inputs": {
+      "image": {"name": "图像", "tooltip": "输入批次，形状为批次×高×宽×通道，数值范围为 0–1 的浮点数。将在 GPU 上处理。"},
+      "width": {"name": "宽度", "tooltip": "目标宽度，以像素为单位。保持宽高比和填充模式中为最大适配宽度；裁剪模式中为最终输出宽度。"},
+      "height": {"name": "高度", "tooltip": "目标高度，以像素为单位。保持宽高比和填充模式中为最大适配高度；裁剪模式中为最终输出高度。"},
+      "resize_mode": {"name": "调整模式", "tooltip": "选择保持宽高比、拉伸、覆盖裁剪、适配填充或按宽高比缩放后可整除裁剪。", "options": {"Keep AR": "保持宽高比", "Stretch": "拉伸", "Crop (Cover + Crop)": "裁剪（覆盖后裁剪）", "Pad (Fit + Pad)": "填充（适配后填充）", "AR Scale + Divisible Crop": "宽高比缩放加可整除裁剪"}},
+      "divisible_by": {"name": "可整除数", "tooltip": "强制输出尺寸为 N 的倍数。设为 1，或在界面中设为 0，可禁用。"},
+      "max_batch_size": {"name": "最大批次大小", "tooltip": "0 表示处理整个批次；大于 0 时按该大小分块处理。"},
+      "sinc_window": {"name": "Lanczos 窗口", "tooltip": "Lanczos 窗口大小 a。数值越高越锐利，也可能产生更多振铃。"},
+      "pad_color": {"name": "填充颜色", "tooltip": "仅填充模式使用。以 r, g, b 格式输入 RGB 值，范围为 0–255。"},
+      "crop_position": {"name": "裁剪位置", "tooltip": "决定裁剪时保留哪些边缘，或填充添加到哪里。", "options": {"center": "居中", "top-left": "左上", "top": "顶部", "top-right": "右上", "left": "左侧", "right": "右侧", "bottom-left": "左下", "bottom": "底部", "bottom-right": "右下"}},
+      "precision": {"name": "精度", "tooltip": "重采样计算的数据类型。"},
+      "mask": {"name": "遮罩", "tooltip": "可选遮罩，形状为批次×高×宽，数值范围为 0–1。以最近邻方式调整，并与图像采用相同裁剪和填充。"}
+    },
+    "outputs": {"0": {"name": "图像"}, "1": {"name": "宽度"}, "2": {"name": "高度"}, "3": {"name": "遮罩"}}
+  },
+  "BatchWatermarkSingle": {
+    "display_name": "🐇 水印",
+    "description": "GPU 加速的水印叠加。使用 TorchLanc 调整大小以兼顾质量和速度，既可处理单张图像，也适合批量处理。",
+    "inputs": {
+      "image": {"name": "图像", "tooltip": "要添加水印的图像。接受高×宽×通道或批次×高×宽×通道布局，数值范围为 0–1；将在 GPU 上处理。"},
+      "watermark": {"name": "水印图像", "tooltip": "选择或上传水印图像，建议使用 PNG。文件的透明度会被保留。"},
+      "position": {"name": "位置", "tooltip": "放置水印的位置。选择居中时会忽略边距；旋转会扩展水印画布。", "options": {"bottom-right": "右下", "bottom-left": "左下", "top-right": "右上", "top-left": "左上", "center": "居中"}},
+      "scale": {"name": "缩放", "tooltip": "按宽度缩放。目标水印宽度等于图像宽度乘以缩放值除以 100，保持宽高比。"},
+      "transparency": {"name": "透明度", "tooltip": "水印的 Alpha 倍率。100 表示不变，0 表示完全透明。"},
+      "rotation": {"name": "旋转", "tooltip": "以双三次重采样旋转水印，单位为度。画布会扩展，避免内容被裁切。"},
+      "padding_x": {"name": "水平边距", "tooltip": "从所选边缘额外留出的水平像素边距；居中位置会忽略。"},
+      "padding_y": {"name": "垂直边距", "tooltip": "从所选边缘额外留出的垂直像素边距；居中位置会忽略。"},
+      "optical_padding": {"name": "视觉边距", "tooltip": "根据水印的视觉中心调整位置，使相等边距看起来更自然；影响角落位置，居中时忽略。"},
+      "optical_strength": {"name": "视觉对齐强度", "tooltip": "向视觉中心微调的强度，范围为 0–100。0 表示关闭；宽或旋转的水印会有更明显位移。"},
+      "max_batch_size": {"name": "最大批次大小", "tooltip": "按块处理图像以控制 VRAM。0 表示一次处理整个批次。"},
+      "sinc_window": {"name": "Lanczos 窗口", "tooltip": "调整水印大小时使用的 Lanczos 窗口大小 a。数值越高越锐利，也可能产生更多振铃。"},
+      "precision": {"name": "精度", "tooltip": "重采样计算的数据类型。fp32 质量最稳妥；fp16 和 bf16 在许多 GPU 上更快。"}
+    },
+    "outputs": {"0": {"name": "图像"}}
+  }
+}

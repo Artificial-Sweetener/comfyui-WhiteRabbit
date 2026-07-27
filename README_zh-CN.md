@@ -1,5 +1,7 @@
 # WhiteRabbit：掌控时间之流 🐇
-[English](readme.md) | **简体中文**
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE) [![Comfy Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.comfy.org%2Fnodes%2Fwhiterabbit&query=%24.latest_version.version&label=Comfy%20Registry&color=5b5bd6)](https://registry.comfy.org/publishers/artificialsweetener/nodes/whiterabbit) [![Comfy Registry downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.comfy.org%2Fnodes%2Fwhiterabbit&query=%24.downloads&label=downloads&color=5b5bd6)](https://registry.comfy.org/publishers/artificialsweetener/nodes/whiterabbit) [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+
+<a href="readme.md">English</a> | <strong>简体中文</strong>
 
 这是 **comfyui-WhiteRabbit**，一个专为在 ComfyUI 中处理视频而设计的节点包。
 

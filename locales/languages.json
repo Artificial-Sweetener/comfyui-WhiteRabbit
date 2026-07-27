@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "default_language": "en",
+  "source_contract_sha256": "8809f141f86a0a67625697b85b11e1ab85b2f6283d6ab86ef7a434b9e810a377",
+  "languages": [
+    {
+      "id": "en",
+      "native_display_name": "English",
+      "comfy_locale": "en",
+      "catalog_directory": null,
+      "readme_path": "readme.md",
+      "release_enabled": true
+    },
+    {
+      "id": "zh-Hans",
+      "native_display_name": "简体中文",
+      "comfy_locale": "zh",
+      "catalog_directory": "zh",
+      "readme_path": "README_zh-CN.md",
+      "release_enabled": true
+    }
+  ]
+}
