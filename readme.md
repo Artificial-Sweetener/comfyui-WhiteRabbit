@@ -21,8 +21,8 @@ While some of these nodes certainly can be used for single-image tasks, every on
 
 WhiteRabbit uses ComfyUI's native `models/frame_interpolation/` directory. Select
 RIFE 4.7, 4.9, 4.25, or 4.26 in any WhiteRabbit RIFE node. A missing catalog
-checkpoint downloads automatically into that directory and is verified by SHA-256
-before use.
+checkpoint downloads automatically into that directory when the selected model is
+first needed for inference, and is verified by SHA-256 before use.
 
 ### Python requirements
 
@@ -42,7 +42,8 @@ This pack of nodes helps you solve some of the trickiest problems in video creat
 These nodes bend time itself to add or remove frames with **RIFE 4.7, 4.9,
 4.25, and 4.26**. They share ComfyUI-managed model instances across a workflow
 and retain WhiteRabbit's scale pyramid, internal bidirectional ensemble, arbitrary
-timing, FPS conversion, seam analysis, and stabilization controls.
+timing, FPS conversion, and seam analysis. **RIFE VFI FPS Resample** also brings
+stabilization controls to the tea party.
 
 - **RIFE VFI Interpolate by Multiple**: The basic tool for frame interpolation. Multiply your frames by 2×, 4×, etc., and it’ll generate the new frames needed to make your video silky smooth.
 - **RIFE VFI FPS Resample**: A master of time travel. Convert your video to a specific target frame rate, automatically handling both adding and dropping frames as needed. Includes features to prevent common artifacts like flicker for a clean result.
