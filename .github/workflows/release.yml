@@ -65,6 +65,12 @@ jobs:
       - name: Verify Python tests
         run: pytest -n auto -q
 
+      - name: Configure release committer
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
       - name: Bootstrap published release baseline
         shell: bash
         run: |
