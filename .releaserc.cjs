@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 module.exports = {
-  branches: ["master"],
+  branches: ["main"],
   tagFormat: "v${version}",
   plugins: [
     "@semantic-release/commit-analyzer",

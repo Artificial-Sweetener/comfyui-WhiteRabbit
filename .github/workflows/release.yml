@@ -3,7 +3,7 @@ name: release
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
     inputs:
       dry_run:
@@ -115,9 +115,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin master --tags
-          git checkout master
-          git reset --hard origin/master
+          git fetch origin main --tags
+          git checkout main
+          git reset --hard origin/main
 
       - name: Publish Custom Node to Comfy Registry
         if: steps.release.outputs.released == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_existing == 'true')

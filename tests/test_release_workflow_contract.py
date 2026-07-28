@@ -64,7 +64,7 @@ def test_release_configuration_updates_all_metadata_and_commits_atomically() -> 
 
     config = (PROJECT_ROOT / ".releaserc.cjs").read_text(encoding="utf-8")
 
-    assert 'branches: ["master"]' in config
+    assert 'branches: ["main"]' in config
     assert 'tagFormat: "v${version}"' in config
     assert (
         'prepareCmd: "node scripts/update-release-versions.mjs ${nextRelease.version}"'
@@ -88,7 +88,7 @@ def test_release_workflow_verifies_gates_before_publishing() -> None:
         encoding="utf-8"
     )
 
-    assert "branches:\n      - master" in workflow
+    assert "branches:\n      - main" in workflow
     assert "contents: write" in workflow
     assert "fetch-depth: 0" in workflow
     assert "fetch-tags: true" in workflow
@@ -99,6 +99,9 @@ def test_release_workflow_verifies_gates_before_publishing() -> None:
     assert "pytest -n auto -q" in workflow
     assert "bootstrap-release-baseline.mjs" in workflow
     assert "npx semantic-release" in workflow
+    assert "git fetch origin main --tags" in workflow
+    assert "git checkout main" in workflow
+    assert "git reset --hard origin/main" in workflow
     assert "Publish Custom Node to Comfy Registry" in workflow
 
 
