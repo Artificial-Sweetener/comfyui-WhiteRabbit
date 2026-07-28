@@ -3,7 +3,7 @@
 
 <a href="readme.md">English</a> | <strong>简体中文</strong>
 
-这是 **comfyui-WhiteRabbit**，一个专为在 ComfyUI 中处理视频而设计的节点包。
+这是 **WhiteRabbit**，一个专为在 ComfyUI 中处理视频而设计的节点包。
 
 兔子的拿手好戏是穿梭时间，帮你做出无缝循环视频。但她带来的可不止这些——高质量的任意帧率重采样和超快的图像缩放也都在这份“茶会”礼盒里！
 
@@ -13,7 +13,7 @@
 ## 安装
 
 **快速安装：**
-1. 将 **comfyui-WhiteRabbit** 文件夹放入 `ComfyUI/custom_nodes/`。
+1. 将 **WhiteRabbit** 文件夹放入 `ComfyUI/custom_nodes/`。
 2. 使用 ComfyUI 的 Python 环境安装本节点依赖：
 
    ```powershell

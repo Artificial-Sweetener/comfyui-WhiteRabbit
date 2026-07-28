@@ -25,9 +25,9 @@ dev = [
 ]
 
 [project.urls]
-Repository = "https://github.com/Artificial-Sweetener/comfyui-WhiteRabbit"
-Documentation = "https://github.com/Artificial-Sweetener/comfyui-WhiteRabbit/wiki"
-"Bug Tracker" = "https://github.com/Artificial-Sweetener/comfyui-WhiteRabbit/issues"
+Repository = "https://github.com/Artificial-Sweetener/WhiteRabbit"
+Documentation = "https://github.com/Artificial-Sweetener/WhiteRabbit/wiki"
+"Bug Tracker" = "https://github.com/Artificial-Sweetener/WhiteRabbit/issues"
 
 [tool.comfy]
 PublisherId = "artificialsweetener"
